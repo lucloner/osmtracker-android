@@ -6,12 +6,12 @@ android {
 
     useLibrary 'org.apache.http.legacy'
     compileSdkVersion 30
-    buildToolsVersion = '30.0.3'
+    buildToolsVersion = '31.0.0 rc1'
 
     defaultConfig {
         applicationId "net.vicp.biggee.android.osmtracker"
-        minSdkVersion 16
-        targetSdkVersion 29
+        minSdkVersion 25
+        targetSdkVersion 30
         multiDexEnabled true
 
         testApplicationId "net.vicp.biggee.android.osmtracker.test"
@@ -19,6 +19,13 @@ android {
     }
 
     signingConfigs {
+        key {
+            storeFile file('/home/lucloner/key')
+            storePassword '12345678'
+            keyAlias 'key0'
+            keyPassword '12345678'
+        }
+
         // Create a file $HOME/.gradle/gradle.properties
         // containing the values signing.storeFile=..., etc.
         if (project.hasProperty('signing.storeFile')) {
@@ -33,13 +40,26 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            signingConfig signingConfigs.key
+            multiDexEnabled true
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
             if (signingConfigs.hasProperty('release')) {
                 signingConfig signingConfigs.release
             }
 
 
+        }
+        debug {
+            jniDebuggable true
+            debuggable true
+            renderscriptDebuggable true
+            signingConfig signingConfigs.key
+            minifyEnabled false
+            multiDexEnabled false
         }
     }
 
@@ -50,12 +70,13 @@ android {
     }
     android {
         lintOptions {
-            abortOnError false
+            abortOnError true
         }
     }
 
     defaultConfig {
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        signingConfig signingConfigs.key
     }
 
     testOptions {
@@ -66,7 +87,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    ndkVersion '22.0.7026061'
+    ndkVersion '23.0.7123448 rc1'
 
 }
 
@@ -77,7 +98,7 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpmime:4.5.13'
     //implementation 'org.apache.httpcomponents:httpclient-android:4.3.5'
 
-    implementation 'org.osmdroid:osmdroid-android:6.1.1'
+    implementation 'org.osmdroid:osmdroid-android:6.1.5'
     implementation 'org.apache.httpcomponents:httpcore:4.4.14'
 
     implementation 'oauth.signpost:signpost-commonshttp4:2.1.1'

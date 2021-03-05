@@ -1,9 +1,5 @@
 package net.osmtracker.listener;
 
-import java.text.DecimalFormat;
-
-import net.osmtracker.R;
-import net.osmtracker.db.DataHelper;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
@@ -14,14 +10,19 @@ import android.hardware.SensorManager;
 import android.util.Log;
 import android.widget.TextView;
 
+import net.osmtracker.db.DataHelper;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.text.DecimalFormat;
+
 /**
  * Listener for sensors. In particular for the acceleration and magnetic sensors to provide compass
  * heading.
- * 
+ *
  * Register the listener with your context using the register/unregister functions
- * 
+ *
  * most recent reading from the sensor is always available from azimuth, pitch, roll, accuracy and valid fields
- * 
+ *
  * @author Christoph Gohle
  *
  */

@@ -6,7 +6,6 @@ import android.content.res.Resources;
 import android.preference.PreferenceManager;
 
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.data.GPXMocks;
 import net.osmtracker.data.MockDataHelper;
 import net.osmtracker.data.TrackMocks;
@@ -16,6 +15,7 @@ import net.osmtracker.db.DataHelper;
 import net.osmtracker.db.model.Track;
 import net.osmtracker.db.model.TrackPoint;
 import net.osmtracker.db.model.WayPoint;
+import net.vicp.biggee.android.osmtracker.R;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
@@ -30,13 +30,13 @@ import java.io.File;
 import java.util.Date;
 
 import static junit.framework.TestCase.assertEquals;
+import static net.osmtracker.OSMTracker.Preferences;
 import static net.osmtracker.OSMTracker.Preferences.KEY_OUTPUT_FILENAME;
 import static net.osmtracker.OSMTracker.Preferences.VAL_OUTPUT_FILENAME;
+import static net.osmtracker.util.UnitTestUtils.createDateFrom;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
-import static net.osmtracker.util.UnitTestUtils.createDateFrom;
-import static net.osmtracker.OSMTracker.Preferences;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)

@@ -1,23 +1,5 @@
 package net.osmtracker.util;
 
-import java.io.IOException;
-import java.util.HashMap;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.activity.TrackLogger;
-import net.osmtracker.layout.DisablableTableLayout;
-import net.osmtracker.layout.UserDefinedLayout;
-import net.osmtracker.listener.PageButtonOnClickListener;
-import net.osmtracker.listener.StillImageOnClickListener;
-import net.osmtracker.listener.TagButtonOnClickListener;
-import net.osmtracker.listener.TextNoteOnClickListener;
-import net.osmtracker.listener.VoiceRecOnClickListener;
-import net.osmtracker.service.resources.IconResolver;
-
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -27,6 +9,24 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
+
+import net.osmtracker.OSMTracker;
+import net.osmtracker.activity.TrackLogger;
+import net.osmtracker.layout.DisablableTableLayout;
+import net.osmtracker.layout.UserDefinedLayout;
+import net.osmtracker.listener.PageButtonOnClickListener;
+import net.osmtracker.listener.StillImageOnClickListener;
+import net.osmtracker.listener.TagButtonOnClickListener;
+import net.osmtracker.listener.TextNoteOnClickListener;
+import net.osmtracker.listener.VoiceRecOnClickListener;
+import net.osmtracker.service.resources.IconResolver;
+import net.vicp.biggee.android.osmtracker.R;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * Reads an user defined layout, using a pull parser,

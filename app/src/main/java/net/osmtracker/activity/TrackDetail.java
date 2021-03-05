@@ -1,19 +1,5 @@
 package net.osmtracker.activity;
 
-import java.sql.Date;
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.db.TrackContentProvider;
-import net.osmtracker.db.model.Track;
-import net.osmtracker.gpx.ExportToStorageTask;
-import net.osmtracker.util.MercatorProjection;
-
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -23,8 +9,6 @@ import android.database.Cursor;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -40,13 +24,29 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import net.osmtracker.OSMTracker;
+import net.osmtracker.db.TrackContentProvider;
+import net.osmtracker.db.model.Track;
+import net.osmtracker.gpx.ExportToStorageTask;
+import net.osmtracker.util.MercatorProjection;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.sql.Date;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 /**
  * Display details about one track.  Allow naming the track.
  * The track ID is passed into the Bundle via {@link TrackContentProvider.Schema#COL_TRACK_ID}.
  *
  * @author Jeremy D Monin <jdmonin@nand.net>
- *
  */
 public class TrackDetail extends TrackDetailEditor implements AdapterView.OnItemClickListener {
 

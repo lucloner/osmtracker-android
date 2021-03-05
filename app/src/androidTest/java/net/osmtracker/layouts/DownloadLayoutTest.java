@@ -8,9 +8,9 @@ import androidx.test.espresso.assertion.ViewAssertions;
 import androidx.test.rule.ActivityTestRule;
 
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.activity.TrackManager;
 import net.osmtracker.util.TestUtils;
+import net.vicp.biggee.android.osmtracker.R;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
@@ -18,7 +18,6 @@ import org.junit.Test;
 
 import java.util.Locale;
 
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu;
@@ -28,6 +27,7 @@ import static androidx.test.espresso.matcher.PreferenceMatchers.withTitleText;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static junit.framework.TestCase.fail;
 
 public class DownloadLayoutTest {

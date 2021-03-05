@@ -1,37 +1,13 @@
 package net.osmtracker.activity;
 
-import java.io.File;
-
-import java.util.Date;
-import java.util.HashSet;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.db.DataHelper;
-import net.osmtracker.layout.GpsStatusRecord;
-import net.osmtracker.layout.UserDefinedLayout;
-import net.osmtracker.listener.SensorListener;
-import net.osmtracker.listener.PressureListener;
-import net.osmtracker.receiver.MediaButtonReceiver;
-import net.osmtracker.service.gps.GPSLogger;
-import net.osmtracker.service.gps.GPSLoggerServiceConnection;
-import net.osmtracker.util.CustomLayoutsUtils;
-import net.osmtracker.util.FileSystemUtils;
-import net.osmtracker.util.ThemeValidator;
-import net.osmtracker.view.TextNoteDialog;
-import net.osmtracker.view.VoiceRecDialog;
-import net.osmtracker.db.TrackContentProvider;
-
 import android.Manifest;
 import android.annotation.TargetApi;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.ContentValues;
-
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -44,7 +20,6 @@ import android.location.LocationManager;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
-
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
@@ -52,8 +27,6 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.Settings;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -63,13 +36,36 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import net.osmtracker.OSMTracker;
+import net.osmtracker.db.DataHelper;
+import net.osmtracker.db.TrackContentProvider;
+import net.osmtracker.layout.GpsStatusRecord;
+import net.osmtracker.layout.UserDefinedLayout;
+import net.osmtracker.listener.PressureListener;
+import net.osmtracker.listener.SensorListener;
+import net.osmtracker.receiver.MediaButtonReceiver;
+import net.osmtracker.service.gps.GPSLogger;
+import net.osmtracker.service.gps.GPSLoggerServiceConnection;
+import net.osmtracker.util.CustomLayoutsUtils;
+import net.osmtracker.util.FileSystemUtils;
+import net.osmtracker.util.ThemeValidator;
+import net.osmtracker.view.TextNoteDialog;
+import net.osmtracker.view.VoiceRecDialog;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.io.File;
+import java.util.Date;
+import java.util.HashSet;
+
 
 /**
  * Main track logger activity. Communicate with the GPS service to display GPS
  * status, and allow user to record waypoints.
- * 
+ *
  * @author Nicolas Guillaumin
- * 
  */
 public class TrackLogger extends Activity {
 

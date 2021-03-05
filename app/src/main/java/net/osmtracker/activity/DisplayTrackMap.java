@@ -1,24 +1,5 @@
 package net.osmtracker.activity;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.db.TrackContentProvider;
-import net.osmtracker.overlay.WayPointsOverlay;
-
-import org.osmdroid.api.IMapController;
-import org.osmdroid.config.Configuration;
-import org.osmdroid.tileprovider.tilesource.ITileSource;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.PathOverlay;
-import org.osmdroid.views.overlay.mylocation.SimpleLocationOverlay;
-import org.osmdroid.views.overlay.ScaleBarOverlay;
-
 import android.app.Activity;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -38,13 +19,30 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 
+import net.osmtracker.OSMTracker;
+import net.osmtracker.db.TrackContentProvider;
+import net.osmtracker.overlay.WayPointsOverlay;
+import net.vicp.biggee.android.osmtracker.R;
+
+import org.osmdroid.api.IMapController;
+import org.osmdroid.config.Configuration;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.PathOverlay;
+import org.osmdroid.views.overlay.ScaleBarOverlay;
+import org.osmdroid.views.overlay.mylocation.SimpleLocationOverlay;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Display current track over an OSM map.
  * Based on osmdroid code http://osmdroid.googlecode.com/
  *<P>
  * Used only if {@link OSMTracker.Preferences#KEY_UI_DISPLAYTRACK_OSM} is set.
  * Otherwise {@link DisplayTrack} is used (track only, no OSM background tiles).
- * 
+ *
  * @author Viesturs Zarins
  *
  */

@@ -1,13 +1,14 @@
 package net.osmtracker.layouts;
 
 import android.Manifest;
+
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.rule.GrantPermissionRule;
 
-import net.osmtracker.R;
 import net.osmtracker.activity.ButtonsPresets;
 import net.osmtracker.activity.Preferences;
 import net.osmtracker.util.CustomLayoutsUtils;
+import net.vicp.biggee.android.osmtracker.R;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,9 +26,9 @@ import static net.osmtracker.util.TestUtils.getLayoutsDirectory;
 import static net.osmtracker.util.TestUtils.getStringResource;
 import static net.osmtracker.util.TestUtils.injectMockLayout;
 import static net.osmtracker.util.TestUtils.listFiles;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.junit.Assert.assertFalse;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 
 public class DeleteLayoutTest {

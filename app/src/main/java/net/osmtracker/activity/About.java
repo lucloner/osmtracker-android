@@ -1,10 +1,5 @@
 package net.osmtracker.activity;
 
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.db.DatabaseHelper;
-import net.osmtracker.db.ExportDatabaseTask;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -19,6 +14,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
+
+import net.osmtracker.OSMTracker;
+import net.osmtracker.db.DatabaseHelper;
+import net.osmtracker.db.ExportDatabaseTask;
+import net.vicp.biggee.android.osmtracker.R;
 
 import java.io.File;
 

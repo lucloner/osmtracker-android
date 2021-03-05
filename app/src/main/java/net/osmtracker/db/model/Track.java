@@ -1,16 +1,16 @@
 package net.osmtracker.db.model;
 
+import android.content.ContentResolver;
+import android.database.Cursor;
+
+import net.osmtracker.db.TrackContentProvider;
+import net.vicp.biggee.android.osmtracker.R;
+
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-
-import net.osmtracker.R;
-import net.osmtracker.db.TrackContentProvider;
-
-import android.content.ContentResolver;
-import android.database.Cursor;
 
 /**
  * Represents a Track

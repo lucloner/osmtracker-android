@@ -1,20 +1,10 @@
 package net.osmtracker.activity;
 
-import java.io.File;
-import java.io.FilenameFilter;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-
-import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Environment;
-
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -28,12 +18,16 @@ import android.text.TextWatcher;
 import android.widget.Button;
 import android.widget.EditText;
 
+import net.osmtracker.OSMTracker;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.io.File;
+
 
 /**
  * Manages preferences screen.
- * 
- * @author Nicolas Guillaumin
  *
+ * @author Nicolas Guillaumin
  */
 public class Preferences extends PreferenceActivity {
 

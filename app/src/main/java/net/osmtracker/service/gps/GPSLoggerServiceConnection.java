@@ -1,21 +1,20 @@
 package net.osmtracker.service.gps;
 
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.activity.TrackLogger;
-import net.osmtracker.layout.GpsStatusRecord;
-import net.osmtracker.db.TrackContentProvider;
-
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
+import net.osmtracker.OSMTracker;
+import net.osmtracker.activity.TrackLogger;
+import net.osmtracker.db.TrackContentProvider;
+import net.osmtracker.layout.GpsStatusRecord;
+import net.vicp.biggee.android.osmtracker.R;
+
 /**
  * Handles the bind to the GPS Logger service
- * 
- * @author Nicolas Guillaumin
  *
+ * @author Nicolas Guillaumin
  */
 public class GPSLoggerServiceConnection implements ServiceConnection {
 

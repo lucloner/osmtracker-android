@@ -1,16 +1,16 @@
 package net.osmtracker.layouts;
 
-import androidx.test.espresso.Espresso;
 import androidx.test.espresso.ViewAssertion;
 import androidx.test.rule.ActivityTestRule;
 
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.activity.AvailableLayouts;
+import net.vicp.biggee.android.osmtracker.R;
 
 import org.hamcrest.Matcher;
 import org.junit.Rule;
 import org.junit.Test;
+
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;

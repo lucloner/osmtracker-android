@@ -6,10 +6,10 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.db.DataHelper;
 import net.osmtracker.db.model.Track;
 import net.osmtracker.exception.ExportTrackException;
+import net.vicp.biggee.android.osmtracker.R;
 
 import java.io.File;
 import java.util.Date;

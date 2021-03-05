@@ -1,18 +1,18 @@
 package net.osmtracker.util;
 
-import java.util.Arrays;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Resources;
 
+import net.osmtracker.OSMTracker;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.util.Arrays;
+
 /**
  * <p>Validates the theme from the preferences
  * and update it to the default value if necessary.</p>
- * 
+ *
  * <p>That's required since the theme references have
  * changed to support Android 3+. Users that have upgrade
  * from previous version were still referencing the old

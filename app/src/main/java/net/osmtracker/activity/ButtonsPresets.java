@@ -12,8 +12,6 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -24,11 +22,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.layout.DownloadCustomLayoutTask;
 import net.osmtracker.util.CustomLayoutsUtils;
 import net.osmtracker.util.FileSystemUtils;
+import net.vicp.biggee.android.osmtracker.R;
 
 import java.io.File;
 import java.io.FilenameFilter;

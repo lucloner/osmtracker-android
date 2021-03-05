@@ -1,14 +1,5 @@
 package net.osmtracker.view;
 
-import java.io.File;
-import java.util.Date;
-import java.util.UUID;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.db.DataHelper;
-import net.osmtracker.db.TrackContentProvider.Schema;
-
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -24,10 +15,19 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
-public class VoiceRecDialog extends ProgressDialog implements OnInfoListener{
-	
+import net.osmtracker.OSMTracker;
+import net.osmtracker.db.DataHelper;
+import net.osmtracker.db.TrackContentProvider.Schema;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.io.File;
+import java.util.Date;
+import java.util.UUID;
+
+public class VoiceRecDialog extends ProgressDialog implements OnInfoListener {
+
 	private final static String TAG = VoiceRecDialog.class.getSimpleName();
-	
+
 	/**
 	 * Id of the track the dialog will add this waypoint to
 	 */

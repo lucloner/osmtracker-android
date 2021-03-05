@@ -10,10 +10,10 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.db.DataHelper;
 import net.osmtracker.db.model.Track;
 import net.osmtracker.util.DialogUtils;
+import net.vicp.biggee.android.osmtracker.R;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -38,6 +38,7 @@ import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
  * 
  * @author Nicolas Guillaumin
  */
+@Deprecated
 public class UploadToOpenStreetMapTask extends AsyncTask<Void, Void, Void> {
 
 	private static final String TAG = UploadToOpenStreetMapTask.class.getSimpleName();

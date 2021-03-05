@@ -10,10 +10,10 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 
-import net.osmtracker.R;
 import net.osmtracker.db.DataHelper;
 import net.osmtracker.db.TrackContentProvider;
 import net.osmtracker.db.model.Track;
+import net.vicp.biggee.android.osmtracker.R;
 
 import java.util.Date;
 

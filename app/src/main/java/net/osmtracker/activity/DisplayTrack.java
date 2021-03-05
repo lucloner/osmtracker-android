@@ -1,10 +1,5 @@
 package net.osmtracker.activity;
 
-import net.osmtracker.OSMTracker;
-import net.osmtracker.util.ThemeValidator;
-import net.osmtracker.view.DisplayTrackView;
-import net.osmtracker.db.TrackContentProvider;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -12,18 +7,21 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.view.ViewGroup.LayoutParams;
+
+import net.osmtracker.OSMTracker;
+import net.osmtracker.db.TrackContentProvider;
+import net.osmtracker.util.ThemeValidator;
+import net.osmtracker.view.DisplayTrackView;
+import net.vicp.biggee.android.osmtracker.R;
 
 /**
  * Displays current track in 2D view.
- *<P>
+ * <p>
  * Used only if {@link OSMTracker.Preferences#KEY_UI_DISPLAYTRACK_OSM} is not true.
  * Otherwise {@link DisplayTrackMap} is used.
- * 
- * @author Nicolas Guillaumin
  *
+ * @author Nicolas Guillaumin
  */
 public class DisplayTrack extends Activity {
 
@@ -55,21 +53,21 @@ public class DisplayTrack extends Activity {
 				@Override
 				public void run() {
 					new AlertDialog.Builder(DisplayTrack.this)
-						.setTitle(net.osmtracker.R.string.prefs_displaytrack_osm)
-						.setMessage(net.osmtracker.R.string.prefs_displaytrack_osm_summary_ask)
-						.setNegativeButton(android.R.string.no, null)
-						.setPositiveButton(net.osmtracker.R.string.displaytrack_map, new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialog, int which) {
-								PreferenceManager.getDefaultSharedPreferences(DisplayTrack.this).edit()
-									.putBoolean(OSMTracker.Preferences.KEY_UI_DISPLAYTRACK_OSM, true).commit();
-								Intent i = new Intent(DisplayTrack.this, DisplayTrackMap.class);
-								i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
-								startActivity(i);
-								finish();  // DisplayTrackMap replaces our activity
-							}
-						})
-						.show();
+							.setTitle(R.string.prefs_displaytrack_osm)
+							.setMessage(R.string.prefs_displaytrack_osm_summary_ask)
+							.setNegativeButton(android.R.string.no, null)
+							.setPositiveButton(R.string.displaytrack_map, new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface dialog, int which) {
+									PreferenceManager.getDefaultSharedPreferences(DisplayTrack.this).edit()
+											.putBoolean(OSMTracker.Preferences.KEY_UI_DISPLAYTRACK_OSM, true).commit();
+									Intent i = new Intent(DisplayTrack.this, DisplayTrackMap.class);
+									i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
+									startActivity(i);
+									finish();  // DisplayTrackMap replaces our activity
+								}
+							})
+							.show();
 				}
 			});
 		}

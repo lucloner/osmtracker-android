@@ -1,9 +1,5 @@
 package net.osmtracker.db;
 
-import net.osmtracker.R;
-import net.osmtracker.db.model.Track;
-import net.osmtracker.activity.TrackManager;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.view.LayoutInflater;
@@ -13,12 +9,15 @@ import android.widget.CursorAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import net.osmtracker.activity.TrackManager;
+import net.osmtracker.db.model.Track;
+import net.vicp.biggee.android.osmtracker.R;
+
 /**
  * Adapter for track list in {@link TrackManager Track Manager}.
  * For each row's contents, see <tt>tracklist_item.xml</tt>.
- * 
- * @author Nicolas Guillaumin
  *
+ * @author Nicolas Guillaumin
  */
 public class TracklistAdapter extends CursorAdapter {
 

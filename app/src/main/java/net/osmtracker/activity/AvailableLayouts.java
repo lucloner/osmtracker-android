@@ -26,16 +26,17 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.layout.DownloadCustomLayoutTask;
 import net.osmtracker.layout.GetStringResponseTask;
 import net.osmtracker.layout.URLValidatorTask;
 import net.osmtracker.util.CustomLayoutsUtils;
 import net.osmtracker.util.URLCreator;
+import net.vicp.biggee.android.osmtracker.R;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 

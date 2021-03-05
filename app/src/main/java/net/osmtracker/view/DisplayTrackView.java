@@ -1,12 +1,5 @@
 package net.osmtracker.view;
 
-import java.text.DecimalFormat;
-
-import net.osmtracker.R;
-import net.osmtracker.db.TrackContentProvider;
-import net.osmtracker.util.ArrayUtils;
-import net.osmtracker.util.MercatorProjection;
-
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -18,6 +11,13 @@ import android.graphics.Paint.Align;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.TextView;
+
+import net.osmtracker.db.TrackContentProvider;
+import net.osmtracker.util.ArrayUtils;
+import net.osmtracker.util.MercatorProjection;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.text.DecimalFormat;
 
 public class DisplayTrackView extends TextView {
 

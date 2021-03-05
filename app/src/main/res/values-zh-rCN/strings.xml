@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <!--Generic strings-->
-  <string name="app_name">OSMTracker for Android™</string>
+  <string name="app_name">bOSM定位记录器™</string>
   <string name="app_short_name">OSMTracker</string>
   <string name="app_description">受Windows Mobile操作系统版本的OSMTracker启发，本应用可以让你追踪记录你的旅行轨迹，标记重要的中途点(通过录音、照片等方式)，将其导出为GPX格式，以便此后用于诸如JOSM一类的OpenStreetMap工具。</string>
   <!--TrackLogger-->

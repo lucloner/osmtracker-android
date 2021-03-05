@@ -1,18 +1,19 @@
 package net.osmtracker.osm;
 
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.activity.OpenStreetMapUpload;
-import net.osmtracker.util.DialogUtils;
-
-import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
-import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
-import oauth.signpost.exception.OAuthException;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
+import net.osmtracker.OSMTracker;
+import net.osmtracker.activity.OpenStreetMapUpload;
+import net.osmtracker.util.DialogUtils;
+import net.vicp.biggee.android.osmtracker.R;
+
+import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
+import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
+import oauth.signpost.exception.OAuthException;
 
 /**
  * <p>Retrieves the OAuth access token and starts the upload.</p>
@@ -21,6 +22,7 @@ import android.util.Log;
  * permitted on the UI thread.</p>
  * 
  */
+@Deprecated
 public class RetrieveAccessTokenTask extends AsyncTask<Void, Void, Void> {
 
 	private static final String TAG = RetrieveAccessTokenTask.class.getSimpleName();

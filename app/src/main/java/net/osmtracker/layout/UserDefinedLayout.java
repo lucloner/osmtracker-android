@@ -1,25 +1,25 @@
 package net.osmtracker.layout;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Stack;
+import android.content.Context;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.activity.TrackLogger;
 import net.osmtracker.service.resources.AppResourceIconResolver;
 import net.osmtracker.service.resources.ExternalDirectoryIconResolver;
 import net.osmtracker.util.UserDefinedLayoutReader;
+import net.vicp.biggee.android.osmtracker.R;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import android.content.Context;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Stack;
 
 /**
  * Manages user-definable layout. User can define his own buttons

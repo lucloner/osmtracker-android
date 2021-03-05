@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="net.osmtracker"
+    package="net.vicp.biggee.android.osmtracker"
     android:installLocation="auto"
     android:versionCode="56"
-    android:versionName="1.0.0">
+    android:versionName="1.0.0b">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -19,20 +19,28 @@
         android:description="@string/app_description"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/HighContrast"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:theme="@style/AppTheme">
+        <activity android:name="net.vicp.biggee.android.OSMTracker.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
 
-        <activity android:name="net.osmtracker.activity.Intro"
-            android:label="@string/app_intro"
-            android:theme="@style/AppIntroStyle"/>
         <activity
-            android:name=".activity.TrackManager"
-            android:theme="@style/AppTheme"
-            android:label="@string/app_name">
+            android:name="net.osmtracker.activity.Intro"
+            android:label="@string/app_intro"
+            android:theme="@style/AppIntroStyle" />
+        <activity
+            android:name="net.osmtracker.activity.TrackManager"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -40,20 +48,20 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activity.TrackLogger"
+            android:name="net.osmtracker.activity.TrackLogger"
             android:label="@string/tracklogger"
             android:launchMode="singleTop" />
         <activity
-            android:name=".activity.Preferences"
+            android:name="net.osmtracker.activity.Preferences"
             android:label="@string/prefs" />
         <activity
-            android:name=".activity.WaypointList"
+            android:name="net.osmtracker.activity.WaypointList"
             android:label="@string/wplist" />
         <activity
-            android:name=".activity.TrackDetail"
+            android:name="net.osmtracker.activity.TrackDetail"
             android:label="@string/trackdetail" />
         <activity
-            android:name=".activity.OpenStreetMapUpload"
+            android:name="net.osmtracker.activity.OpenStreetMapUpload"
             android:label="@string/osm_upload">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -67,38 +75,38 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activity.About"
+            android:name="net.osmtracker.activity.About"
             android:label="@string/about" />
         <activity
-            android:name=".activity.DisplayTrack"
+            android:name="net.osmtracker.activity.DisplayTrack"
             android:label="@string/displaytrack" />
         <activity
-            android:name=".activity.DisplayTrackMap"
+            android:name="net.osmtracker.activity.DisplayTrackMap"
             android:label="@string/displaytrackmap" />
-        <activity android:name=".activity.ButtonsPresets">
+        <activity android:name="net.osmtracker.activity.ButtonsPresets">
             <intent-filter>
                 <action android:name="launch_buttons_presets" />
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.AvailableLayouts" />
+        <activity android:name="net.osmtracker.activity.AvailableLayouts" />
 
         <service
-            android:name=".service.gps.GPSLogger"
-            android:foregroundServiceType="location"
-            android:exported="false">
+            android:name="net.osmtracker.service.gps.GPSLogger"
+            android:exported="false"
+            android:foregroundServiceType="location">
             <intent-filter>
                 <action android:name="osmtracker.intent.GPS_SERVICE" />
             </intent-filter>
         </service>
 
         <provider
-            android:name=".db.TrackContentProvider"
+            android:name="net.osmtracker.db.TrackContentProvider"
             android:authorities="net.osmtracker.provider"
             android:exported="false" />
 
-        <receiver android:name=".receiver.MediaButtonReceiver">
+        <receiver android:name="net.osmtracker.receiver.MediaButtonReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
@@ -113,7 +121,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
         </provider>
-
     </application>
 
 </manifest>

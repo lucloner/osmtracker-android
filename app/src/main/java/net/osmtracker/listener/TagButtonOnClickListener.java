@@ -1,15 +1,14 @@
 package net.osmtracker.listener;
 
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-
 import android.content.Intent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Toast;
 
+import net.osmtracker.OSMTracker;
 import net.osmtracker.db.TrackContentProvider;
+import net.vicp.biggee.android.osmtracker.R;
 
 /**
  * Listener for standard waypoint tag button.

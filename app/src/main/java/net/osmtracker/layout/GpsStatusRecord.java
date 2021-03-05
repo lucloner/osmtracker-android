@@ -1,11 +1,5 @@
 package net.osmtracker.layout;
 
-import java.text.DecimalFormat;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.activity.TrackLogger;
-
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
@@ -19,9 +13,6 @@ import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,12 +20,21 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import net.osmtracker.OSMTracker;
+import net.osmtracker.activity.TrackLogger;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.text.DecimalFormat;
+
 /**
  * Layout for the GPS Status image and misc
  * action buttons.
- * 
+ *
  * @author Nicolas Guillaumin
- * 
  */
 public class GpsStatusRecord extends LinearLayout implements Listener, LocationListener {
 	

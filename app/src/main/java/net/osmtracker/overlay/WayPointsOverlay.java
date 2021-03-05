@@ -1,21 +1,21 @@
 package net.osmtracker.overlay;
 
-import java.util.ArrayList;
-import java.util.List;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.Cursor;
+import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 
-import net.osmtracker.R;
 import net.osmtracker.db.TrackContentProvider;
+import net.vicp.biggee.android.osmtracker.R;
 
 import org.osmdroid.api.IMapView;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.ItemizedOverlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
-import android.content.Context;
-import android.content.ContentResolver;
-import android.database.Cursor;
-import android.graphics.Point;
-import android.graphics.drawable.Drawable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WayPointsOverlay extends ItemizedOverlay<OverlayItem> {
 

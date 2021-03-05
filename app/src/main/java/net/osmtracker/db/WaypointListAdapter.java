@@ -1,11 +1,5 @@
 package net.osmtracker.db;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-
-import net.osmtracker.R;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.view.LayoutInflater;
@@ -15,11 +9,16 @@ import android.widget.CursorAdapter;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 /**
  * Adapter for the waypoint list. Gets waypoints from database.
- * 
+ *
  * @author Nicolas Guillaumin
- * 
  */
 public class WaypointListAdapter extends CursorAdapter {
 

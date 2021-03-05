@@ -14,7 +14,6 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
 import net.osmtracker.db.TrackContentProvider;
 import net.osmtracker.db.model.Track;
 import net.osmtracker.gpx.ExportToTempFileTask;
@@ -22,6 +21,7 @@ import net.osmtracker.osm.OpenStreetMapConstants;
 import net.osmtracker.osm.RetrieveAccessTokenTask;
 import net.osmtracker.osm.RetrieveRequestTokenTask;
 import net.osmtracker.osm.UploadToOpenStreetMapTask;
+import net.vicp.biggee.android.osmtracker.R;
 
 import oauth.signpost.OAuth;
 import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;

@@ -1,19 +1,20 @@
 package net.osmtracker.util;
+
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.res.Resources;
 import android.preference.PreferenceManager;
-import android.content.SharedPreferences.Editor;
 
 import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
+import net.vicp.biggee.android.osmtracker.R;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mock;

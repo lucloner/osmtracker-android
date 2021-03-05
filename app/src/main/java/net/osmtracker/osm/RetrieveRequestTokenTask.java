@@ -1,24 +1,26 @@
 package net.osmtracker.osm;
 
-import net.osmtracker.R;
-import net.osmtracker.util.DialogUtils;
-
-import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
-import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
-import oauth.signpost.exception.OAuthException;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import net.osmtracker.util.DialogUtils;
+import net.vicp.biggee.android.osmtracker.R;
+
+import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
+import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
+import oauth.signpost.exception.OAuthException;
+
 /**
  * <p>Retrieves the OAuth request token (opens the browser
  * for the user to log in if necessary).</p>
- * 
+ *
  * <p>Cannot be done directly in the upload activity as network is not
  * permitted on the UI thread.</p>
  */
+@Deprecated
 public class RetrieveRequestTokenTask extends AsyncTask<Void, Void, Void> {
 
 	private static final String TAG = RetrieveRequestTokenTask.class.getSimpleName();

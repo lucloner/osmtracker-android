@@ -1,10 +1,5 @@
 package net.osmtracker.view;
 
-import java.util.UUID;
-
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -13,7 +8,11 @@ import android.os.Bundle;
 import android.view.WindowManager.LayoutParams;
 import android.widget.EditText;
 
+import net.osmtracker.OSMTracker;
 import net.osmtracker.db.TrackContentProvider;
+import net.vicp.biggee.android.osmtracker.R;
+
+import java.util.UUID;
 
 public class TextNoteDialog extends AlertDialog {
 	

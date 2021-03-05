@@ -1,13 +1,5 @@
 package net.osmtracker.service.gps;
 
-import net.osmtracker.OSMTracker;
-import net.osmtracker.R;
-import net.osmtracker.activity.TrackLogger;
-import net.osmtracker.db.DataHelper;
-import net.osmtracker.db.TrackContentProvider;
-import net.osmtracker.listener.PressureListener;
-import net.osmtracker.listener.SensorListener;
-
 import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -27,9 +19,18 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.util.Log;
+
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
-import android.util.Log;
+
+import net.osmtracker.OSMTracker;
+import net.osmtracker.activity.TrackLogger;
+import net.osmtracker.db.DataHelper;
+import net.osmtracker.db.TrackContentProvider;
+import net.osmtracker.listener.PressureListener;
+import net.osmtracker.listener.SensorListener;
+import net.vicp.biggee.android.osmtracker.R;
 
 /**
  * GPS logging service.

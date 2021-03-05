@@ -6,7 +6,7 @@ import androidx.fragment.app.Fragment
 import com.github.appintro.AppIntro
 import com.github.appintro.AppIntroFragment
 import net.osmtracker.OSMTracker
-import net.osmtracker.R
+import net.vicp.biggee.android.osmtracker.R
 
 class Intro : AppIntro() {
     override fun onCreate(savedInstanceState: Bundle?) {

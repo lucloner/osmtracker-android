@@ -1,0 +1,60 @@
+package net.vicp.biggee.android.bOSMTracker
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Service
+import android.content.Intent
+import android.os.Bundle
+import android.provider.Settings
+import android.telephony.TelephonyManager
+import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_main.*
+import net.osmtracker.activity.TrackManager
+import net.vicp.biggee.android.osmtracker.R
+import pub.devrel.easypermissions.EasyPermissions
+import java.io.InputStreamReader
+import java.util.concurrent.Executors
+
+
+class MainActivity : AppCompatActivity() {
+
+    @SuppressLint("HardwareIds")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        var imei = "没有获取到IMEI"
+        if (!EasyPermissions.hasPermissions(this, Manifest.permission.READ_PHONE_STATE)) {
+            EasyPermissions.requestPermissions(this, Manifest.permission.READ_PHONE_STATE, 1)
+        }
+
+        try {
+            val tm = baseContext.getSystemService(Service.TELEPHONY_SERVICE) as TelephonyManager
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                imei = Settings.System.getString(contentResolver, Settings.Secure.ANDROID_ID)
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                imei = tm.imei
+            } else {
+                imei = tm.deviceId
+            }
+        } catch (e: Exception) {
+            Log.e(this::class.java.simpleName, "$e${e.stackTraceToString()}");
+        }
+
+        b_textView.append("\t设备标识:$imei\n\t${InputStreamReader(resources.assets.open("text.txt")).readText().replace("\n", "\n\t")}")
+
+        b_button.setOnClickListener {
+            startActivity(Intent(this@MainActivity, TrackManager::class.java))
+        }
+
+        b_sendemail.setOnClickListener {
+            if (!EasyPermissions.hasPermissions(this, Manifest.permission.INTERNET)) {
+                EasyPermissions.requestPermissions(this, Manifest.permission.INTERNET, 2)
+            }
+            Executors.newSingleThreadExecutor().execute {
+                Core.sendEmail("lucloner@hotmail.com", true)
+            }
+        }
+    }
+}

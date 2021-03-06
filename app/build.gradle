@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 
 android {
 
@@ -39,6 +40,13 @@ android {
     }
 
     buildTypes {
+        def localProperties = new Properties()
+        localProperties.load(new FileInputStream(rootProject.file("local.properties")))
+        def smtpServer=''+localProperties['smtpServer']
+        def smtpUser=''+localProperties['smtpUser']
+        def smtpPass=''+localProperties['smtpPass']
+        println "!!!!====!!!!====Build E-Mail SMTP Setting: $smtpUser:$smtpPass@$smtpServer"
+
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
@@ -51,7 +59,9 @@ android {
                 signingConfig signingConfigs.release
             }
 
-
+            buildConfigField('String','smtpServer',"\"${smtpServer}\"")
+            buildConfigField('String','smtpUser',"\"${smtpUser}\"")
+            buildConfigField('String','smtpPass',"\"${smtpPass}\"")
         }
         debug {
             jniDebuggable true
@@ -60,6 +70,10 @@ android {
             signingConfig signingConfigs.key
             minifyEnabled false
             multiDexEnabled false
+
+            buildConfigField('String','smtpServer',"\"${smtpServer}\"")
+            buildConfigField('String','smtpUser',"\"${smtpUser}\"")
+            buildConfigField('String','smtpPass',"\"${smtpPass}\"")
         }
     }
 
@@ -67,6 +81,7 @@ android {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
+        pickFirst 'META-INF/LICENSE.txt' // picks the JavaMail license file
     }
     android {
         lintOptions {
@@ -123,14 +138,29 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    
+
     compileOnly 'org.jbundle.util.osgi.wrapped:org.jbundle.util.osgi.wrapped.org.apache.http.client:4.1.2'
 
     // AndroidX Capable version
     implementation 'com.github.AppIntro:AppIntro:6.0.0'
     implementation 'com.google.android.material:material:1.3.0'
 
+    def room_version = "2.2.6"
 
+    implementation "androidx.room:room-runtime:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
+
+    // optional - Kotlin Extensions and Coroutines support for Room
+    implementation "androidx.room:room-ktx:$room_version"
+
+    // optional - Test helpers
+    testImplementation "androidx.room:room-testing:$room_version"
+
+    // For developers using AndroidX in their applications
+    implementation 'pub.devrel:easypermissions:3.0.0'
+
+    implementation 'com.sun.mail:android-mail:1.5.5'
+    implementation 'com.sun.mail:android-activation:1.5.5'
 }
 
 task copyNorwegianValues(type: Copy) {

@@ -13,8 +13,22 @@ buildscript {
 }
 
 allprojects {
+//    println("11111aaaaa;"+properties["properties"])
+//    properties["properties"].forEach{k,v->
+//        println("=11111aaaaa;"+k+" "+v.toString())
+//    }
+//
+
+//    println "===11111aaaaa"+localProperties['smtpServer']
+
     repositories {
         google()
         jcenter()
+        maven {
+            url "https://maven.java.net/content/groups/public/"
+        }
     }
 }
+
+
+

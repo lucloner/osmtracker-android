@@ -6,6 +6,10 @@
 *程序需开机自启动
 *将原版程序和应用ku框架升级到最新版本
 *去除openstreet联网部分
+***自己编译注意:需要增加【local.properties】内的属性，不支持TLS/SSL加密仅支持明文(一般为端口25):
+smtpServer = 发送服务器
+smtpUser = 用户名
+smtpPass = 密码
 
 以下为原始说明：
 Get it on Google Play https://play.google.com/store/apps/details?id=net.osmtracker

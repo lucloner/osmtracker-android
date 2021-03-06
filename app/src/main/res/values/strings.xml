@@ -2,7 +2,7 @@
 <resources>
     <!-- Generic strings -->
     <string name="app_name">bOSM定位记录器™</string>
-    <string name="app_short_name">OSMTracker</string>
+    <string name="app_short_name">bOSMTracker</string>
     <string name="app_description">Inspired by OSMTracker on Windows Mobile, it allows you to track your journeys, mark significant way points (Voice recording, photos), export them in GPX format for later use with Open Street Map tools like JOSM.</string>
 
     <!-- TrackLogger -->

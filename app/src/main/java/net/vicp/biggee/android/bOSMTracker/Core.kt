@@ -5,7 +5,7 @@ import android.content.ContextWrapper
 import android.database.Cursor
 import android.util.Log
 import android.util.LongSparseArray
-import androidx.core.util.isNotEmpty
+import androidx.core.util.isEmpty
 import androidx.core.util.valueIterator
 import com.sun.mail.smtp.SMTPTransport
 import net.osmtracker.db.TrackContentProvider
@@ -24,7 +24,7 @@ import kotlin.collections.set
 
 object Core {
 
-    fun sendEmail(to: String, message: String = "JavaMail APIs Test", debug: Boolean = true): Boolean {
+    fun sendEmail(to: String, subject: String = "JavaMail APIs Test", message: String = "JavaMail APIs Test Hello World", debug: Boolean = true): Boolean {
         val from: String = BuildConfig.smtpUser
         val host: String = BuildConfig.smtpServer
 
@@ -43,7 +43,7 @@ object Core {
             msg.setFrom(from)
             val address = arrayOf(InternetAddress(to))
             msg.setRecipients(Message.RecipientType.TO, address)
-            msg.subject = "JavaMail APIs Test"
+            msg.subject = subject
             msg.sentDate = Date()
             // If the desired charset is known, you can use
             // setText(text, charset)
@@ -125,16 +125,24 @@ object Core {
     }
 
     fun printTable(data: LongSparseArray<Map<String, String>>, table: String = "<table border=\"1\"><tr><td>", tr: String = "</td></tr><tr><td>", td: String = "</td><td>", closeTable: String = "</td></tr></table>"): String {
-        val tableBody = StringBuilder(table)
-        if (data.isNotEmpty()) {
-            tableBody.append(data.valueAt(0).keys.joinToString(td))
-                    .append(tr)
+        if (data.isEmpty()) {
+            return ""
         }
+        val tableBody = StringBuilder(table)
+        tableBody.append(data.valueAt(0).keys.joinToString(td))
+                .append(tr)
         data.valueIterator().forEach {
             tableBody.append(it.values.toTypedArray().joinToString(td))
                     .append(tr)
         }
 
         return tableBody.append(closeTable).toString()
+    }
+
+    class FormattedDate(year: Int, month: Int) : Date(year, month, 1) {
+
+        override fun toString(): String {
+            return "${this.year}年${this.month}月"
+        }
     }
 }

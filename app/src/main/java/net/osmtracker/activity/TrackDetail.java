@@ -1,6 +1,7 @@
 package net.osmtracker.activity;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -14,7 +15,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -70,14 +70,17 @@ public class TrackDetail extends TrackDetailEditor implements AdapterView.OnItem
 	 */
 	private static final int WP_COUNT_INDEX = 0;
 
-	/** Does this track have any waypoints?  If true, underline Waypoint count in the list. */
+	/**
+	 * Does this track have any waypoints?  If true, underline Waypoint count in the list.
+	 */
 	private boolean trackHasWaypoints = false;
 
 	/**
 	 * List with track info
 	 */
 	private ListView lv;
-	
+
+	@SuppressLint("MissingSuperCall")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState, R.layout.trackdetail, getIntent().getExtras().getLong(TrackContentProvider.Schema.COL_TRACK_ID));
@@ -85,26 +88,20 @@ public class TrackDetail extends TrackDetailEditor implements AdapterView.OnItem
 		lv = (ListView) findViewById(R.id.trackdetail_list);
 
 		final Button btnOk = (Button) findViewById(R.id.trackdetail_btn_ok);
-		btnOk.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				save();
-				finish();				
-			}
+		btnOk.setOnClickListener(v -> {
+			save();
+			finish();
 		});
-				
+
 		final Button btnCancel = (Button) findViewById(R.id.trackdetail_btn_cancel);
-		btnCancel.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				// Just close the dialog
-				finish();				
-			}
+		btnCancel.setOnClickListener(v -> {
+			// Just close the dialog
+			finish();
 		});
-		
+
 		// Do not show soft keyboard by default
 		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-		
+
 		// further work is done in onResume.
 	}
 

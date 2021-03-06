@@ -81,6 +81,8 @@ android {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/LICENSE.md'
+        exclude 'META-INF/NOTICE.md'
         pickFirst 'META-INF/LICENSE.txt' // picks the JavaMail license file
     }
     android {
@@ -104,6 +106,9 @@ android {
     }
     ndkVersion '23.0.7123448 rc1'
 
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
 }
 
 dependencies {
@@ -159,8 +164,8 @@ dependencies {
     // For developers using AndroidX in their applications
     implementation 'pub.devrel:easypermissions:3.0.0'
 
-    implementation 'com.sun.mail:android-mail:1.5.5'
-    implementation 'com.sun.mail:android-activation:1.5.5'
+    implementation 'com.sun.mail:android-mail:1.6.6'
+    implementation 'com.sun.mail:android-activation:1.6.6'
 }
 
 task copyNorwegianValues(type: Copy) {

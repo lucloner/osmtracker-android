@@ -1,5 +1,6 @@
 package net.osmtracker.activity;
 
+import android.annotation.SuppressLint;
 import android.content.ContentUris;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -7,8 +8,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
@@ -42,8 +41,8 @@ public class OpenStreetMapUpload extends TrackDetailEditor {
 	private static final String TAG = OpenStreetMapUpload.class.getSimpleName();
 
 	/** URL that the browser will call once the user is authenticated */
-	private static final String OAUTH_CALLBACK_URL = "osmtracker://osm-upload/oath-completed/?"+ TrackContentProvider.Schema.COL_TRACK_ID+"=";
-	
+	private static final String OAUTH_CALLBACK_URL = "osmtracker://osm-upload/oath-completed/?" + TrackContentProvider.Schema.COL_TRACK_ID + "=";
+
 	private static final CommonsHttpOAuthProvider oAuthProvider = new CommonsHttpOAuthProvider(
 			OpenStreetMapConstants.OAuth.Urls.REQUEST_TOKEN_URL,
 			OpenStreetMapConstants.OAuth.Urls.ACCESS_TOKEN_URL,
@@ -51,31 +50,24 @@ public class OpenStreetMapUpload extends TrackDetailEditor {
 	private static final CommonsHttpOAuthConsumer oAuthConsumer = new CommonsHttpOAuthConsumer(
 			OpenStreetMapConstants.OAuth.CONSUMER_KEY,
 			OpenStreetMapConstants.OAuth.CONSUMER_SECRET);
-	
+
+	@SuppressLint("MissingSuperCall")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		
+
 		super.onCreate(savedInstanceState, R.layout.osm_upload, getTrackId());
 		fieldsMandatory = true;
 
 		final Button btnOk = (Button) findViewById(R.id.osm_upload_btn_ok);
-		btnOk.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				if (save()) {
-					startUpload();
-				}
+		btnOk.setOnClickListener(v -> {
+			if (save()) {
+				startUpload();
 			}
 		});
 
 		final Button btnCancel = (Button) findViewById(R.id.osm_upload_btn_cancel);
-		btnCancel.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				finish();				
-			}
-		});
-		
+		btnCancel.setOnClickListener(v -> finish());
+
 		// Do not show soft keyboard by default
 		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 	}

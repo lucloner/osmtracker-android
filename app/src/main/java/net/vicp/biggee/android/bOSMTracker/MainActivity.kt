@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
 
         var imei = "没有获取到IMEI"
         if (!EasyPermissions.hasPermissions(this, Manifest.permission.READ_PHONE_STATE)) {
-            EasyPermissions.requestPermissions(this, Manifest.permission.READ_PHONE_STATE, 1)
+            EasyPermissions.requestPermissions(this, "尝试获取IMEI", 1, Manifest.permission.READ_PHONE_STATE)
         }
 
         try {
@@ -54,10 +54,12 @@ class MainActivity : AppCompatActivity() {
 
         b_sendemail.setOnClickListener {
             if (!EasyPermissions.hasPermissions(this, Manifest.permission.INTERNET)) {
-                EasyPermissions.requestPermissions(this, Manifest.permission.INTERNET, 2)
+                EasyPermissions.requestPermissions(this, "尝试联网", 2, Manifest.permission.INTERNET)
             }
             Executors.newSingleThreadExecutor().execute {
-                Core.sendEmail("lucloner@hotmail.com", true)
+                Core.apply {
+                    sendEmail("lucloner@hotmail.com", printTable(readTracker(this@MainActivity)) + printTable(readTrackerPoint(this@MainActivity, 1)), true)
+                }
             }
         }
     }

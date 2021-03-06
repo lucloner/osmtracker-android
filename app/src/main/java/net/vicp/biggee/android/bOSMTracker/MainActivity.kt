@@ -31,12 +31,16 @@ class MainActivity : AppCompatActivity() {
 
         try {
             val tm = baseContext.getSystemService(Service.TELEPHONY_SERVICE) as TelephonyManager
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                imei = Settings.System.getString(contentResolver, Settings.Secure.ANDROID_ID)
-            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                imei = tm.imei
-            } else {
-                imei = tm.deviceId
+            imei = when {
+                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q -> {
+                    Settings.System.getString(contentResolver, Settings.Secure.ANDROID_ID)
+                }
+                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O -> {
+                    tm.imei
+                }
+                else -> {
+                    tm.deviceId
+                }
             }
         } catch (e: Exception) {
             Log.e(this::class.java.simpleName, "$e${e.stackTraceToString()}");

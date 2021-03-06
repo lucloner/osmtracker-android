@@ -5,8 +5,8 @@ public class OpenStreetMapConstants {
 
     private static final boolean DEV_MODE = false;
 
-    private static final String OSM_API_URL_DEV = "https://master.apis.dev.openstreetmap.org";
-    private static final String OSM_API_URL_PROD = "https://www.openstreetmap.org";
+    private static final String OSM_API_URL_DEV = "";
+    private static final String OSM_API_URL_PROD = "";
     private static final String OSM_API_URL = (DEV_MODE) ? OSM_API_URL_DEV : OSM_API_URL_PROD;
 
     public static class Api {
@@ -25,12 +25,12 @@ public class OpenStreetMapConstants {
     }
 
     public static class OAuth {
-        public static final String CONSUMER_KEY_DEV = "FgGrirJh5UORShsKWiElkSQuN54DRoJ21UgwnrFW";
-        public static final String CONSUMER_KEY_PROD = "1eYt7J6qLY858GaHdRv2CeTuKyl1pvr9tC2lI6Zz";
+        public static final String CONSUMER_KEY_DEV = "";
+        public static final String CONSUMER_KEY_PROD = "";
         public static final String CONSUMER_KEY = (DEV_MODE) ? CONSUMER_KEY_DEV : CONSUMER_KEY_PROD;
 
-        public static final String CONSUMER_SECRET_DEV = "12er8G9HMElFmwR1YKyXLLN55vfeYrecRWgLZYnX";
-        public static final String CONSUMER_SECRET_PROD = "yL0NNWXXz9ZZUwQlFhiuuLWKzrdjWu7H00KkXTrr";
+        public static final String CONSUMER_SECRET_DEV = "";
+        public static final String CONSUMER_SECRET_PROD = "";
         public static final String CONSUMER_SECRET = (DEV_MODE) ? CONSUMER_SECRET_DEV : CONSUMER_SECRET_PROD;
 
         public static class Urls {

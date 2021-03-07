@@ -9,20 +9,18 @@ import android.os.Bundle
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.Log
-import android.util.LongSparseArray
 import android.util.Patterns.EMAIL_ADDRESS
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.util.forEach
-import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.email_dialog_view.*
 import kotlinx.android.synthetic.main.email_dialog_view.view.*
 import net.osmtracker.activity.TrackManager
+import net.osmtracker.db.TrackContentProvider
 import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.R
 import pub.devrel.easypermissions.EasyPermissions
@@ -93,7 +91,7 @@ class MainActivity : AppCompatActivity() {
                     val readTracker = readTracker(this@MainActivity)
                     val month = LinkedHashSet<Date>()
                     readTracker.valueIterator().forEach {
-                        val date = it["start_date"] ?: return@forEach
+                        val date = it[TrackContentProvider.Schema.COL_START_DATE] ?: return@forEach
                         val realDate = Date(date.toLong())
                         val formatDate = Core.FormattedDate(realDate.year, realDate.month)
                         month.add(formatDate)
@@ -109,9 +107,11 @@ class MainActivity : AppCompatActivity() {
                                 setOnCheckedChangeListener { _, isChecked ->
                                     d ?: return@setOnCheckedChangeListener
                                     if (isChecked) {
+                                        Log.d("vDate", "${d.year}:${d.month}($d)+=>$selected")
                                         selected.add(d)
                                     } else {
                                         selected.remove(d)
+                                        Log.d("vDate", "$selected")
                                     }
                                 }
                             }
@@ -121,8 +121,6 @@ class MainActivity : AppCompatActivity() {
                     view.b_dateList.apply {
                         adapter = arrayAdapter
                     }
-
-                    val html = StringBuilder(printTable(readTracker))
 
                     val settings = readSetting(applicationContext)
 
@@ -149,24 +147,11 @@ class MainActivity : AppCompatActivity() {
                             return@b_sendOK
                         }
 
-                        readTracker.keyIterator().forEach {
-                            val readTrackerPoint = LongSparseArray<Map<String, String>>()
-
-                            readTrackerPoint(this@MainActivity, it).forEach readTrackerPoint@{ key, map ->
-                                val date = map["point_timestamp"] ?: return@readTrackerPoint
-                                val realDate = Date(date.toLong())
-                                val formatDate = Date(realDate.year, realDate.month, 1)
-                                if (selected.parallelStream().anyMatch(formatDate::equals)) {
-                                    readTrackerPoint.put(key, map)
-                                }
-                            }
-                            html.append(printTable(readTrackerPoint))
-                        }
-
                         imei = view.b_deviceId.text.toString().trim()
                         Executors.newWorkStealingPool().execute {
                             val d = Date()
-                            val sent = sendEmail(email, "[bOSMTracker]手机标识:$imei(${d})", "$imei<hr />$html")
+                            val (html, csv) = assembleMailMessage(applicationContext, selected, imei)
+                            val sent = sendEmail(email, "[bOSMTracker]手机标识:$imei(${d})", "$imei<hr />$html", zipFile(csv))
                             if (!fakeSend && sent) {
                                 setting = Setting(email = email, imei = imei, sentDate = d.time, repeatTime = setting.repeatTime, cron = cron)
                                 saveSetting(applicationContext, setting)

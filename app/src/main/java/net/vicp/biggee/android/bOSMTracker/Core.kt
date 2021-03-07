@@ -222,11 +222,13 @@ object Core {
 
     fun assembleMailMessage(applicationContext: Context, months: Set<Date>, imei: String): Pair<String, File> {
         val sorted = months.sorted()
+        val last = sorted.last()
         val startDate = sorted.first().time
-        val endDate = sorted.last().apply { month++ }.time
+        val endDate = Date(last.year, last.month + 1, 1).time
         val dateRange = LongRange(startDate, endDate)
         val readTracker = readTracker(applicationContext, dateRange)
         val trackers = LongSparseArray<Map<String, String>>()
+
         //筛选追踪任务
         readTracker.forEach { id, row ->
             val date = row[TrackContentProvider.Schema.COL_START_DATE] ?: return@forEach
@@ -235,11 +237,19 @@ object Core {
             if (months.parallelStream().anyMatch(formatDate::equals)) {
                 trackers.put(id, row)
             }
+            Log.d("trackers", "($months)=$formatDate:$id:$row")
         }
+
         //创建html
         val html = StringBuilder(printTable(trackers))
         //创建excel文件
-        val csv = File.createTempFile("tracker", "csv")
+        val csv = File.createTempFile("tracker", ".csv")
+
+        //找不到返回
+        if (trackers.isEmpty()) {
+            return Pair<String, File>("找不到符合条件的记录", csv)
+        }
+
         var maxCols = 3
         val head = "设备标识"
         val coordinate = arrayOf("纬度", "经度")
@@ -264,7 +274,7 @@ object Core {
     }
 
     fun zipFile(file: File): File {
-        val zipFile = File.createTempFile("zip", "zip")
+        val zipFile = File.createTempFile("csv", ".zip")
         ZipOutputStream(zipFile.outputStream().buffered()).use { fOut ->
             file.inputStream().buffered().use { fIn ->
                 val entry = ZipEntry(file.name)

@@ -7,8 +7,11 @@ import android.util.Log
 import android.util.LongSparseArray
 import androidx.core.util.isEmpty
 import androidx.core.util.valueIterator
+import androidx.room.Room
 import com.sun.mail.smtp.SMTPTransport
 import net.osmtracker.db.TrackContentProvider
+import net.vicp.biggee.android.bOSMTracker.db.DataCenter
+import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.BuildConfig
 import java.util.*
 import javax.activation.DataHandler
@@ -68,7 +71,7 @@ object Core {
     fun readTracker(context: Context): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val idCol = 0
-        val readCols = arrayOf("name", "start_date")
+        val readCols = arrayOf("name", "start_date", "_id")
         val data = LongSparseArray<Map<String, String>>()
 
         var cursor: Cursor? = null
@@ -142,7 +145,21 @@ object Core {
     class FormattedDate(year: Int, month: Int) : Date(year, month, 1) {
 
         override fun toString(): String {
-            return "${this.year}年${this.month}月"
+            return "${if (year < 1900) year + 1900 else year}年${month + 1}月"
         }
+    }
+
+    fun readSetting(applicationContext: Context): Array<Setting> {
+        val db = Room.databaseBuilder(applicationContext, DataCenter::class.java, "bOSMTrack").build()
+        val setting = db.dao().getSetting()
+        return setting.toTypedArray()
+    }
+
+    fun saveSetting(applicationContext: Context, setting: Setting, deadLine: Long = Long.MIN_VALUE) {
+        val db = Room.databaseBuilder(applicationContext, DataCenter::class.java, "bOSMTrack").build()
+        if (deadLine > 0) {
+            db.dao().clearSetting(deadLine)
+        }
+        db.dao().addSetting(setting)
     }
 }

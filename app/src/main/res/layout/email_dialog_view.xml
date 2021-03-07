@@ -11,14 +11,24 @@
         android:layout_weight="1"
         android:ems="10"
         android:hint="请输入E-Mail地址"
+        android:autofillHints=""
         android:inputType="textEmailAddress" />
+
+    <EditText
+        android:id="@+id/b_deviceId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:autofillHints=""
+        android:hint="请输入IMEI"
+        android:inputType="textNoSuggestions" />
 
     <ListView
         android:id="@+id/b_dateList"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:choiceMode="multipleChoiceModal">
+        android:choiceMode="multipleChoice">
 
     </ListView>
 
@@ -26,6 +36,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/b_repeat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="每月重复" />
 
         <Button
             android:id="@+id/b_sendOK"

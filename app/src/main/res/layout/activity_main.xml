@@ -25,10 +25,18 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <Button
+        android:id="@+id/b_terminate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="彻底退出"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
         android:id="@+id/b_sendemail"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="发送邮件"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toEndOf="@id/b_terminate" />
 </androidx.constraintlayout.widget.ConstraintLayout>

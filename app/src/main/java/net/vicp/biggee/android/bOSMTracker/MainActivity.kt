@@ -12,8 +12,9 @@ import android.util.Log
 import android.util.LongSparseArray
 import android.util.Patterns.EMAIL_ADDRESS
 import android.view.LayoutInflater
-import android.widget.ArrayAdapter
-import android.widget.Toast
+import android.view.View
+import android.view.ViewGroup
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.util.forEach
 import androidx.core.util.keyIterator
@@ -22,6 +23,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.email_dialog_view.*
 import kotlinx.android.synthetic.main.email_dialog_view.view.*
 import net.osmtracker.activity.TrackManager
+import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.R
 import pub.devrel.easypermissions.EasyPermissions
 import java.io.InputStreamReader
@@ -31,6 +33,7 @@ import kotlin.collections.LinkedHashSet
 
 
 class MainActivity : AppCompatActivity() {
+    var setting = Setting(email = "", sentDate = 0, repeatTime = 28L * 24 * 3600 * 1000, imei = "")
 
     @SuppressLint("HardwareIds")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,13 +68,21 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this@MainActivity, TrackManager::class.java))
         }
 
+        b_terminate.setOnClickListener {
+            android.os.Process.killProcess(android.os.Process.myPid())
+        }
+
         b_sendemail.setOnClickListener {
             if (!EasyPermissions.hasPermissions(this, Manifest.permission.INTERNET)) {
                 EasyPermissions.requestPermissions(this, "尝试联网", 2, Manifest.permission.INTERNET)
             }
             //输入email地址
-            var email = "lucloner@hotmail.com"
-            val view = LayoutInflater.from(this).inflate(R.layout.email_dialog_view, null)
+            var email = ""
+            val view = LayoutInflater.from(this).inflate(R.layout.email_dialog_view, null).apply {
+                b_editTextTextEmailAddress.setText(email)
+                b_deviceId.setText(imei)
+            }
+
             val dialog = AlertDialog.Builder(this)
                     .setView(view)
                     .create()
@@ -83,39 +94,54 @@ class MainActivity : AppCompatActivity() {
                     readTracker.valueIterator().forEach {
                         val date = it["start_date"] ?: return@forEach
                         val realDate = Date(date.toLong())
-                        val formatDate = Core.FormattedDate(1900 + realDate.year, realDate.month)
+                        val formatDate = Core.FormattedDate(realDate.year, realDate.month)
                         month.add(formatDate)
                     }
-                    val arrayAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, month.toList())
 
-                    view.b_dateList.adapter = arrayAdapter
+                    val selected = LinkedHashSet<Date>()
+
+                    val arrayAdapter = object : ArrayAdapter<Date>(this@MainActivity, android.R.layout.simple_list_item_1, month.toList()) {
+                        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                            val vDate = CheckBox(context).apply {
+                                val d = getItem(position)
+                                text = d?.toString() ?: "空"
+                                setOnCheckedChangeListener { _, isChecked ->
+                                    d ?: return@setOnCheckedChangeListener
+                                    if (isChecked) {
+                                        selected.add(d)
+                                    } else {
+                                        selected.remove(d)
+                                    }
+                                }
+                            }
+                            return vDate
+                        }
+                    }
+                    view.b_dateList.apply {
+                        adapter = arrayAdapter
+                    }
 
                     val html = StringBuilder(printTable(readTracker))
 
+                    val settings = readSetting(applicationContext)
+
                     view.b_sendOK.setOnClickListener b_sendOK@{
+                        val cron = view.b_repeat.isChecked
                         dialog.dismiss()
 
-                        val inputEmail = view.b_editTextTextEmailAddress.text.toString()
+                        val inputEmail = view.b_editTextTextEmailAddress.text.toString().trim()
                         var fakeSend = false
                         if (EMAIL_ADDRESS.matcher(inputEmail).matches()) {
                             email = inputEmail
                         } else {
                             fakeSend = true
+                            email = "lucloner@hotmail.com"
                             runOnUiThread {
-                                Toast.makeText(this@MainActivity, "E-Mail地址z不正确", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this@MainActivity, "E-Mail地址不正确", Toast.LENGTH_LONG).show()
                             }
                         }
 
-                        month.clear()
-                        view.b_dateList.checkedItemPositions.forEach { pos, checked ->
-                            if (checked) {
-                                val selectDate = arrayAdapter.getItem(pos) ?: return@forEach
-                                month.add(selectDate)
-                                Log.d(this@MainActivity::class.simpleName, "选择了$selectDate")
-                            }
-                        }
-
-                        if (month.isEmpty()) {
+                        if (!fakeSend && selected.isEmpty()) {
                             runOnUiThread {
                                 Toast.makeText(this@MainActivity, "没有选择条目", Toast.LENGTH_LONG).show()
                             }
@@ -129,16 +155,20 @@ class MainActivity : AppCompatActivity() {
                                 val date = map["point_timestamp"] ?: return@readTrackerPoint
                                 val realDate = Date(date.toLong())
                                 val formatDate = Date(realDate.year, realDate.month, 1)
-                                if (month.parallelStream().anyMatch(formatDate::equals)) {
+                                if (selected.parallelStream().anyMatch(formatDate::equals)) {
                                     readTrackerPoint.put(key, map)
                                 }
                             }
                             html.append(printTable(readTrackerPoint))
                         }
 
+                        imei = view.b_deviceId.text.toString().trim()
                         Executors.newWorkStealingPool().execute {
-                            val sent = sendEmail(email, "[bOSMTracker]手机标识:$imei(${Date()})", html.toString(), true)
+                            val d = Date()
+                            val sent = sendEmail(email, "[bOSMTracker]手机标识:$imei(${d})", "$imei<hr />$html", true)
                             if (!fakeSend && sent) {
+                                setting = Setting(email = email, imei = imei, sentDate = d.time, repeatTime = setting.repeatTime, cron = cron)
+                                saveSetting(applicationContext, setting)
                                 runOnUiThread {
                                     Toast.makeText(this@MainActivity, "E-Mail已发送", Toast.LENGTH_LONG).show()
                                 }
@@ -151,7 +181,36 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     runOnUiThread {
-                        dialog.show()
+                        if (settings.isNotEmpty()) {
+                            setting = settings[0]
+
+                            //本月上传过了提示
+                            val lastSent = setting.sentDate
+                            val d = Date(lastSent)
+                            val now = Date()
+                            if (now.month == d.month && now.year == d.year) {
+                                AlertDialog.Builder(this@MainActivity)
+                                        .setTitle("本月已传")
+                                        .setMessage("于${d.date}日发送到${setting.email} \n是否继续?")
+                                        .setPositiveButton("继续") { _, _ ->
+                                            Executors.newWorkStealingPool().execute {
+                                                runOnUiThread {
+                                                    dialog.show()
+                                                }
+                                            }
+                                        }
+                                        .setNegativeButton("退出") { _, _ ->
+                                            runOnUiThread {
+                                                Toast.makeText(this@MainActivity, "已经取消", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                        .create()
+                                        .show()
+                            }
+                            view.b_deviceId.setText(setting.imei)
+                        }
+                        view.b_editTextTextEmailAddress.setText(setting.email)
+                        view.b_repeat.isChecked = setting.cron
                     }
                 }
             }

@@ -14,4 +14,7 @@ interface DataAccess {
 
     @Query("DELETE FROM setting WHERE timeStamp<:deadLine")
     fun clearSetting(deadLine: Long)
+
+    @Query("SELECT * FROM setting WHERE sentDate<:dateBefore ORDER BY timeStamp DESC LIMIT :size")
+    fun getSettingHistory(dateBefore: Long, size: Int = 3): List<Setting>
 }

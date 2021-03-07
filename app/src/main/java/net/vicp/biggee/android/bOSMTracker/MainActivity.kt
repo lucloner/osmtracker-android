@@ -32,6 +32,7 @@ import java.util.concurrent.Executors
 import kotlin.collections.LinkedHashSet
 
 
+@Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
     var setting = Setting(email = "", sentDate = 0, repeatTime = 28L * 24 * 3600 * 1000, imei = "")
 
@@ -165,7 +166,7 @@ class MainActivity : AppCompatActivity() {
                         imei = view.b_deviceId.text.toString().trim()
                         Executors.newWorkStealingPool().execute {
                             val d = Date()
-                            val sent = sendEmail(email, "[bOSMTracker]手机标识:$imei(${d})", "$imei<hr />$html", true)
+                            val sent = sendEmail(email, "[bOSMTracker]手机标识:$imei(${d})", "$imei<hr />$html")
                             if (!fakeSend && sent) {
                                 setting = Setting(email = email, imei = imei, sentDate = d.time, repeatTime = setting.repeatTime, cron = cron)
                                 saveSetting(applicationContext, setting)
@@ -213,6 +214,55 @@ class MainActivity : AppCompatActivity() {
                         view.b_repeat.isChecked = setting.cron
                     }
                 }
+            }
+        }
+
+        //查询本月上传情况
+        Executors.newWorkStealingPool().execute {
+            val now = Date()
+            val firstOfMonth = Date(now.year, now.month, 1)
+            val settings = Core.readSettingHistory(applicationContext, firstOfMonth.time)
+            if (settings.isEmpty()) {
+                return@execute
+            }
+            setting = settings[0]
+            if (!setting.cron) {
+                return@execute
+            }
+            val lastSent = setting.sentDate
+            val d = Date(lastSent)
+            if (firstOfMonth.month == d.month + 1 && firstOfMonth.year == d.month) {
+                return@execute
+            } else if (firstOfMonth.year == d.month + 1 && d.month == 12 && firstOfMonth.month == 1) {
+                return@execute
+            }
+            imei = setting.imei
+            val email = setting.email
+
+            runOnUiThread {
+                AlertDialog.Builder(this@MainActivity)
+                        .setTitle("上月未传")
+                        .setMessage("上个月数据还未上传,是否上传\n$email\n$imei?")
+                        .setPositiveButton("上传") { _, _ ->
+                            Executors.newWorkStealingPool().execute {
+                                val (html, csv) = Core.assembleMailMessage(applicationContext, hashSetOf(Date(firstOfMonth.year, firstOfMonth.month - 1, 1)), imei)
+                                val sent = Core.sendEmail(email, "[bOSMTracker][AUTO]手机标识:$imei(${now})", html, Core.zipFile(csv))
+                                if (sent) {
+                                    setting = Setting(email = email, imei = imei, sentDate = now.time, repeatTime = setting.repeatTime, cron = true)
+                                    Core.saveSetting(applicationContext, setting)
+                                    runOnUiThread {
+                                        Toast.makeText(this@MainActivity, "E-Mail已发送", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                        }
+                        .setNegativeButton("退出") { _, _ ->
+                            runOnUiThread {
+                                Toast.makeText(this@MainActivity, "下次启动再提示", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        .create()
+                        .show()
             }
         }
     }

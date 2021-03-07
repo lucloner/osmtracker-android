@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package net.vicp.biggee.android.bOSMTracker
 
 import android.content.Context
@@ -5,7 +7,9 @@ import android.content.ContextWrapper
 import android.database.Cursor
 import android.util.Log
 import android.util.LongSparseArray
+import androidx.core.util.forEach
 import androidx.core.util.isEmpty
+import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.room.Room
 import com.sun.mail.smtp.SMTPTransport
@@ -13,13 +17,19 @@ import net.osmtracker.db.TrackContentProvider
 import net.vicp.biggee.android.bOSMTracker.db.DataCenter
 import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.BuildConfig
+import java.io.*
 import java.util.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.activation.DataHandler
 import javax.mail.Message
 import javax.mail.MessagingException
+import javax.mail.Multipart
 import javax.mail.Session
 import javax.mail.internet.InternetAddress
+import javax.mail.internet.MimeBodyPart
 import javax.mail.internet.MimeMessage
+import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
 import kotlin.collections.HashMap
 import kotlin.collections.set
@@ -27,7 +37,11 @@ import kotlin.collections.set
 
 object Core {
 
-    fun sendEmail(to: String, subject: String = "JavaMail APIs Test", message: String = "JavaMail APIs Test Hello World", debug: Boolean = true): Boolean {
+    fun sendEmail(to: String,
+                  subject: String = "JavaMail APIs Test",
+                  message: String = "JavaMail APIs Test Hello World",
+                  attachment: File? = null,
+                  debug: Boolean = true): Boolean {
         val from: String = BuildConfig.smtpUser
         val host: String = BuildConfig.smtpServer
 
@@ -51,11 +65,40 @@ object Core {
             // If the desired charset is known, you can use
             // setText(text, charset)
             val html = "<HTML><HEAD><TITLE>${msg.subject}</TITLE></HEAD><BODY>$message</BODY></HTML>"
-
             Log.d("sendEmail", html)
-            msg.dataHandler = DataHandler(ByteArrayDataSource(html, "text/html"))
 
-            msg.setHeader("X-Mailer", "sendhtml");
+            // create and fill the first message part
+            val mbp1 = MimeBodyPart()
+            mbp1.dataHandler = DataHandler(ByteArrayDataSource(html, "text/html"))
+
+            // create the second message part
+            val mbp2 = MimeBodyPart()
+            if (attachment != null) {
+                mbp2.attachFile(attachment)
+            }
+
+            /*
+	         * Use the following approach instead of the above line if
+	         * you want to control the MIME type of the attached file.
+	         * Normally you should never need to do this.
+	         *
+	        FileDataSource fds = new FileDataSource(filename) {
+		        public String getContentType() {
+		            return "application/octet-stream";
+		        }
+	        };
+	        mbp2.setDataHandler(new DataHandler(fds));
+	        mbp2.setFileName(fds.getName());
+	        */
+
+            // create the Multipart and add its parts to it
+            val mp: Multipart = MimeMultipart()
+            mp.addBodyPart(mbp1)
+            mp.addBodyPart(mbp2)
+            // add the Multipart to the message
+            msg.setContent(mp)
+
+            msg.setHeader("X-Mailer", "sendhtml")
             val t = session.getTransport("smtp") as SMTPTransport
             t.connect(host, from, BuildConfig.smtpPass)
             t.sendMessage(msg, msg.allRecipients)
@@ -68,10 +111,12 @@ object Core {
         return true
     }
 
-    fun readTracker(context: Context): LongSparseArray<Map<String, String>> {
+    fun readTracker(context: Context, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val idCol = 0
-        val readCols = arrayOf("name", "start_date", "_id")
+        val readCols = arrayOf(TrackContentProvider.Schema.COL_NAME,
+                TrackContentProvider.Schema.COL_START_DATE,
+                TrackContentProvider.Schema.COL_ID)
         val data = LongSparseArray<Map<String, String>>()
 
         var cursor: Cursor? = null
@@ -83,7 +128,12 @@ object Core {
                 val row = LinkedHashMap<String, String>()
                 val id = cursor.getLong(idCol)
                 readCols.iterator().forEach { row[it] = cursor.getString(cursor.getColumnIndex(it)) }
-                data.put(id, row)
+                val date = row[TrackContentProvider.Schema.COL_START_DATE]?.toLong() ?: continue
+                if (dateRange.contains(date)) {
+                    data.put(id, row)
+                } else if (dateRange.first > date) {
+                    break
+                }
             }
             return data
         } catch (e: Exception) {
@@ -96,12 +146,9 @@ object Core {
         return data
     }
 
-    fun readTrackerPoint(context: Context, trackerId: Long): LongSparseArray<Map<String, String>> {
+    fun readTrackerPoint(context: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
-        val idColName = "track_id"
-
         val data = LongSparseArray<Map<String, String>>()
-
         var cursor: Cursor? = null
         try {
             cursor = contentResolver.query(
@@ -114,12 +161,17 @@ object Core {
                 for (index in 1 until cursor.columnCount) {
                     row[readCols[index]] = "" + cursor.getString(index)
                 }
-                data.put(id, row)
+                val date = row[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: continue
+                if (dateRange.contains(date)) {
+                    data.put(id, row)
+                } else if (dateRange.last < date) {
+                    break
+                }
             }
             return data
         } catch (e: Exception) {
             data.append(Long.MAX_VALUE, HashMap<String, String>().apply {
-                put(idColName, "${e.message}")
+                put(TrackContentProvider.Schema.COL_TRACK_ID, "${e.message}")
             })
         } finally {
             cursor?.close()
@@ -143,7 +195,6 @@ object Core {
     }
 
     class FormattedDate(year: Int, month: Int) : Date(year, month, 1) {
-
         override fun toString(): String {
             return "${if (year < 1900) year + 1900 else year}年${month + 1}月"
         }
@@ -161,5 +212,66 @@ object Core {
             db.dao().clearSetting(deadLine)
         }
         db.dao().addSetting(setting)
+    }
+
+    fun readSettingHistory(applicationContext: Context, dateBefore: Long): Array<Setting> {
+        val db = Room.databaseBuilder(applicationContext, DataCenter::class.java, "bOSMTrack").build()
+        val setting = db.dao().getSettingHistory(dateBefore)
+        return setting.toTypedArray()
+    }
+
+    fun assembleMailMessage(applicationContext: Context, months: Set<Date>, imei: String): Pair<String, File> {
+        val sorted = months.sorted()
+        val startDate = sorted.first().time
+        val endDate = sorted.last().apply { month++ }.time
+        val dateRange = LongRange(startDate, endDate)
+        val readTracker = readTracker(applicationContext, dateRange)
+        val trackers = LongSparseArray<Map<String, String>>()
+        //筛选追踪任务
+        readTracker.forEach { id, row ->
+            val date = row[TrackContentProvider.Schema.COL_START_DATE] ?: return@forEach
+            val realDate = Date(date.toLong())
+            val formatDate = Date(realDate.year, realDate.month, 1)
+            if (months.parallelStream().anyMatch(formatDate::equals)) {
+                trackers.put(id, row)
+            }
+        }
+        //创建html
+        val html = StringBuilder(printTable(trackers))
+        //创建excel文件
+        val csv = File.createTempFile("tracker", "csv")
+        var maxCols = 3
+        val head = "设备标识"
+        val coordinate = arrayOf("纬度", "经度")
+
+        //获取任务记录
+        val trackersPoints = LongSparseArray<LongSparseArray<Map<String, String>>>()
+        readTracker.keyIterator().forEach {
+            val trackerPoints = readTrackerPoint(applicationContext, it)
+            trackersPoints.put(it, trackerPoints)
+
+            //组装html
+            html.append(printTable(trackerPoints))
+            //组装excel
+            csv.appendText("$head,${coordinate[0]},${coordinate[1]}\n$imei")
+            trackerPoints.valueIterator().forEach { row ->
+                csv.appendText(",${row[TrackContentProvider.Schema.COL_LATITUDE]},${row[TrackContentProvider.Schema.COL_LONGITUDE]}")
+            }
+            csv.appendText(",END\n")
+        }
+
+        return Pair<String, File>(html.toString(), csv)
+    }
+
+    fun zipFile(file: File): File {
+        val zipFile = File.createTempFile("zip", "zip")
+        ZipOutputStream(zipFile.outputStream().buffered()).use { fOut ->
+            file.inputStream().buffered().use { fIn ->
+                val entry = ZipEntry(file.name)
+                fOut.putNextEntry(entry)
+                fIn.copyTo(fOut)
+            }
+        }
+        return zipFile
     }
 }

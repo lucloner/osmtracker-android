@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.util.isEmpty
 import androidx.core.util.valueIterator
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.email_dialog_view.*
@@ -63,7 +64,7 @@ class MainActivity : AppCompatActivity() {
             Log.e(this::class.java.simpleName, "$e${e.stackTraceToString()}");
         }
 
-        b_textView.append("\t设备标识:$imei\n\t${InputStreamReader(resources.assets.open("text.txt")).readText().replace("\n", "\n\t")}")
+        b_textView.append("\n\t设备标识:$imei\n\t${InputStreamReader(resources.assets.open("text.txt")).readText().replace("\n", "\n\t")}")
 
         b_button.setOnClickListener {
             startActivity(Intent(this@MainActivity, TrackManager::class.java))
@@ -101,7 +102,7 @@ class MainActivity : AppCompatActivity() {
                     val month = LinkedHashSet<Date>()
                     readTracker.valueIterator().forEach {
                         val date = it[TrackContentProvider.Schema.COL_START_DATE] ?: return@forEach
-                        val realDate = Date(date.toLong())
+                        val realDate = dateFormat.parse(date)
                         val formatDate = Core.FormattedDate(realDate.year, realDate.month)
                         month.add(formatDate)
                     }
@@ -256,14 +257,20 @@ class MainActivity : AppCompatActivity() {
             imei = setting.imei
             val email = setting.email
             //获取月份
-            val months=HashSet<Date>()
-            val dateFrom=Core.FormattedDate(d.year,d.month)
-            while (dateFrom<firstOfMonth){
+            val months = HashSet<Date>()
+            val dateFrom = Core.FormattedDate(d.year, d.month)
+            while (dateFrom < firstOfMonth) {
                 months.add(dateFrom)
                 dateFrom.month++
             }
 
+            val readTracker = Core.readTracker(this@MainActivity, lastSent until firstOfMonth.time, 1)
+
             runOnUiThread {
+                if (readTracker.isEmpty()) {
+                    Toast.makeText(this@MainActivity, "没有待发送的邮件", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
                 AlertDialog.Builder(this@MainActivity)
                         .setTitle("上月未传")
                         .setMessage("上个月数据还未上传,是否从${dateFrom}上传到$email($imei)?")

@@ -5,6 +5,7 @@ package net.vicp.biggee.android.bOSMTracker
 import android.content.Context
 import android.content.ContextWrapper
 import android.database.Cursor
+import android.icu.text.SimpleDateFormat
 import android.util.Log
 import android.util.LongSparseArray
 import androidx.core.util.forEach
@@ -18,8 +19,8 @@ import net.vicp.biggee.android.bOSMTracker.db.DataCenter
 import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.BuildConfig
 import java.io.*
+import java.nio.charset.Charset
 import java.util.*
-import java.util.stream.Collector
 import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -38,7 +39,8 @@ import kotlin.collections.set
 
 
 object Core {
-    var stopActiveTrack= Runnable {  }
+    var stopActiveTrack = Runnable { }
+    val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINESE) }
 
     fun sendEmail(to: String,
                   subject: String = "JavaMail APIs Test",
@@ -63,7 +65,7 @@ object Core {
             msg.setFrom(from)
             val address = to.split(";")
                     .parallelStream()
-                    .map{InternetAddress(it)}
+                    .map { InternetAddress(it) }
                     .collect(Collectors.toList())
                     .toTypedArray()
             msg.setRecipients(Message.RecipientType.TO, address)
@@ -118,7 +120,7 @@ object Core {
         return true
     }
 
-    fun readTracker(context: Context, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
+    fun readTracker(context: Context, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE), limit: Long = Long.MAX_VALUE): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val idCol = 0
         val readCols = arrayOf(TrackContentProvider.Schema.COL_NAME,
@@ -137,8 +139,9 @@ object Core {
                 readCols.iterator().forEach { row[it] = cursor.getString(cursor.getColumnIndex(it)) }
                 val date = row[TrackContentProvider.Schema.COL_START_DATE]?.toLong() ?: continue
                 if (dateRange.contains(date)) {
+                    row[TrackContentProvider.Schema.COL_START_DATE] = dateFormat.format(date)
                     data.put(id, row)
-                } else if (dateRange.first > date) {
+                } else if (dateRange.first > date || data.size() >= limit) {
                     break
                 }
             }
@@ -156,6 +159,7 @@ object Core {
     fun readTrackerPoint(context: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val data = LongSparseArray<Map<String, String>>()
+        val importantCols = arrayOf(TrackContentProvider.Schema.COL_LATITUDE, TrackContentProvider.Schema.COL_LONGITUDE)
         var cursor: Cursor? = null
         try {
             cursor = contentResolver.query(
@@ -166,10 +170,15 @@ object Core {
                 val row = LinkedHashMap<String, String>()
                 val id = cursor.getLong(0)
                 for (index in 1 until cursor.columnCount) {
-                    row[readCols[index]] = "" + cursor.getString(index)
+                    if (importantCols.contains(readCols[index])) {
+                        row[readCols[index]] = cursor.getDouble(index).toString()
+                    } else {
+                        row[readCols[index]] = "" + cursor.getString(index)
+                    }
                 }
                 val date = row[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: continue
                 if (dateRange.contains(date)) {
+                    row[TrackContentProvider.Schema.COL_TIMESTAMP] = dateFormat.format(date)
                     data.put(id, row)
                 } else if (dateRange.last < date) {
                     break
@@ -239,7 +248,7 @@ object Core {
         //筛选追踪任务
         readTracker.forEach { id, row ->
             val date = row[TrackContentProvider.Schema.COL_START_DATE] ?: return@forEach
-            val realDate = Date(date.toLong())
+            val realDate = dateFormat.parse(date)
             val formatDate = Date(realDate.year, realDate.month, 1)
             if (months.parallelStream().anyMatch(formatDate::equals)) {
                 trackers.put(id, row)
@@ -250,16 +259,19 @@ object Core {
         //创建html
         val html = StringBuilder(printTable(trackers))
         //创建excel文件
-        val csv = File.createTempFile("tracker", ".csv")
+        val csv = File.createTempFile("tracker$imei", ".csv")
 
         //找不到返回
         if (trackers.isEmpty()) {
             return Pair<String, File?>("找不到符合条件的记录", null)
         }
 
-        var maxCols = 3
-        val head = "设备标识"
-        val coordinate = arrayOf("纬度", "经度")
+        val dataCols = mapOf(Pair(TrackContentProvider.Schema.COL_TRACK_ID, "序号"),
+                Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "记录时间"),
+                Pair(TrackContentProvider.Schema.COL_LONGITUDE, "经度"),
+                Pair(TrackContentProvider.Schema.COL_LATITUDE, "纬度"))
+        var head = "设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
+        csv.appendText("$head\n", Charset.forName("GB18030"))
 
         //获取任务记录
         val trackersPoints = LongSparseArray<LongSparseArray<Map<String, String>>>()
@@ -270,18 +282,21 @@ object Core {
             //组装html
             html.append(printTable(trackerPoints))
             //组装excel
-            csv.appendText("$head,${coordinate[0]},${coordinate[1]}\n$imei")
+            head = "$imei,${trackers[it].values.joinToString(",")}"
             trackerPoints.valueIterator().forEach { row ->
-                csv.appendText(",${row[TrackContentProvider.Schema.COL_LATITUDE]},${row[TrackContentProvider.Schema.COL_LONGITUDE]}")
+                val data = StringBuilder(head)
+                dataCols.keys.iterator().forEach { colName ->
+                    data.append(",${row[colName]}")
+                }
+                csv.appendText("${data.toString()}\n")
             }
-            csv.appendText(",END\n")
         }
 
         return Pair<String, File>(html.toString(), csv)
     }
 
     fun zipFile(file: File?): File? {
-        file?:return null
+        file ?: return null
         val zipFile = File.createTempFile("csv", ".zip")
         ZipOutputStream(zipFile.outputStream().buffered()).use { fOut ->
             file.inputStream().buffered().use { fIn ->

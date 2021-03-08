@@ -1,15 +1,22 @@
+
 本程序源自:https://github.com/labexp/osmtracker-android
 感谢原作者提供源码，本人做如下修改。
 *需通过该程序采集演示用机的经纬度、亮屏时长信息，并反馈至相关管理人员邮箱，与基础数据比对后考核每台演示用机的使用情况。
+    获取到gps坐标系为wg84标准 如果标图上的话会有略微误差 因为根据国家规定提供地图的单位对地图会有偏转 需要转换成对应单位的坐标系 高德百度都是不同的
 *imei号采集
+    安卓9.1以上是无法获取imei的 但是有一个唯一标识是系统重置后固定生成的
 *定期邮件采集数据
 *程序需开机自启动
 *将原版程序和应用ku框架升级到最新版本
 *去除openstreet联网部分
+*整理二维表格
+*检测屏幕解锁和锁定 知道开屏幕多久
+*提取eml里面的zip文件 然后解压 合成1个文件**写了bat
 ***自己编译注意:需要增加【local.properties】内的属性，不支持TLS/SSL加密仅支持明文(一般为端口25):
 smtpServer = 发送服务器
 smtpUser = 用户名
 smtpPass = 密码
+defaultEmailTo = 默认发送的邮件地址
 
 以下为原始说明：
 Get it on Google Play https://play.google.com/store/apps/details?id=net.osmtracker

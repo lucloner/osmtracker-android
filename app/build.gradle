@@ -21,10 +21,11 @@ android {
 
     signingConfigs {
         key {
-            storeFile file('/home/lucloner/key')
+            storeFile file('key')
             storePassword '12345678'
             keyAlias 'key0'
             keyPassword '12345678'
+            v2SigningEnabled true
         }
 
         // Create a file $HOME/.gradle/gradle.properties
@@ -45,7 +46,8 @@ android {
         def smtpServer=''+localProperties['smtpServer']
         def smtpUser=''+localProperties['smtpUser']
         def smtpPass=''+localProperties['smtpPass']
-        println "!!!!====!!!!====Build E-Mail SMTP Setting: $smtpUser:$smtpPass@$smtpServer"
+        def defaultEmailTo=''+localProperties['defaultEmailTo']
+        println "!!!!====!!!!====Build E-Mail SMTP Setting: $smtpUser:$smtpPass@$smtpServer TO:$defaultEmailTo"
 
         release {
             minifyEnabled true
@@ -62,6 +64,7 @@ android {
             buildConfigField('String','smtpServer',"\"${smtpServer}\"")
             buildConfigField('String','smtpUser',"\"${smtpUser}\"")
             buildConfigField('String','smtpPass',"\"${smtpPass}\"")
+            buildConfigField('String','defaultEmailTo',"\"${defaultEmailTo}\"")
         }
         debug {
             jniDebuggable true
@@ -74,6 +77,7 @@ android {
             buildConfigField('String','smtpServer',"\"${smtpServer}\"")
             buildConfigField('String','smtpUser',"\"${smtpUser}\"")
             buildConfigField('String','smtpPass',"\"${smtpPass}\"")
+            buildConfigField('String','defaultEmailTo',"\"${defaultEmailTo}\"")
         }
     }
 

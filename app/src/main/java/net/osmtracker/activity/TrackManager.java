@@ -40,6 +40,7 @@ import net.osmtracker.exception.CreateTrackException;
 import net.osmtracker.gpx.ExportToStorageTask;
 import net.osmtracker.gpx.ExportToTempFileTask;
 import net.osmtracker.util.FileSystemUtils;
+import net.vicp.biggee.android.bOSMTracker.Core;
 import net.vicp.biggee.android.osmtracker.R;
 
 import java.io.File;
@@ -106,10 +107,18 @@ public class TrackManager extends AppCompatActivity
 			}
 		});
 
+		if(getIntent().hasExtra("OneKeyStart")
+				&&getIntent().getBooleanExtra("OneKeyStart",false)){
+			runOnUiThread(fab::performClick);
+			Core.INSTANCE.setStopActiveTrack(this::stopActiveTrack);
+			return;
+		}
+
 		// should check if is the first time using the app
 		boolean showAppIntro = PreferenceManager.getDefaultSharedPreferences(this)
 				.getBoolean(OSMTracker.Preferences.KEY_DISPLAY_APP_INTRO,
 						OSMTracker.Preferences.VAL_DISPLAY_APP_INTRO);
+
 		if (showAppIntro) {
 			Intent intro = new Intent(this, Intro.class);
 			startActivity(intro);

@@ -22,11 +22,13 @@ import kotlinx.android.synthetic.main.email_dialog_view.view.*
 import net.osmtracker.activity.TrackManager
 import net.osmtracker.db.TrackContentProvider
 import net.vicp.biggee.android.bOSMTracker.db.Setting
+import net.vicp.biggee.android.osmtracker.BuildConfig
 import net.vicp.biggee.android.osmtracker.R
 import pub.devrel.easypermissions.EasyPermissions
 import java.io.InputStreamReader
 import java.util.*
 import java.util.concurrent.Executors
+import kotlin.collections.HashSet
 import kotlin.collections.LinkedHashSet
 
 
@@ -34,7 +36,7 @@ import kotlin.collections.LinkedHashSet
 class MainActivity : AppCompatActivity() {
     var setting = Setting(email = "", sentDate = 0, repeatTime = 28L * 24 * 3600 * 1000, imei = "")
 
-    @SuppressLint("HardwareIds")
+    @SuppressLint("HardwareIds", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -68,6 +70,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         b_terminate.setOnClickListener {
+            Executors.newWorkStealingPool().execute {
+                try {
+                    Core.stopActiveTrack.run()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
             android.os.Process.killProcess(android.os.Process.myPid())
         }
 
@@ -76,7 +85,7 @@ class MainActivity : AppCompatActivity() {
                 EasyPermissions.requestPermissions(this, "尝试联网", 2, Manifest.permission.INTERNET)
             }
             //输入email地址
-            var email = ""
+            var email = BuildConfig.defaultEmailTo
             val view = LayoutInflater.from(this).inflate(R.layout.email_dialog_view, null).apply {
                 b_editTextTextEmailAddress.setText(email)
                 b_deviceId.setText(imei)
@@ -130,13 +139,22 @@ class MainActivity : AppCompatActivity() {
 
                         val inputEmail = view.b_editTextTextEmailAddress.text.toString().trim()
                         var fakeSend = false
-                        if (EMAIL_ADDRESS.matcher(inputEmail).matches()) {
-                            email = inputEmail
-                        } else {
-                            fakeSend = true
-                            email = "lucloner@hotmail.com"
-                            runOnUiThread {
-                                Toast.makeText(this@MainActivity, "E-Mail地址不正确", Toast.LENGTH_LONG).show()
+                        when {
+                            email.trim().isBlank() -> {
+                                email = BuildConfig.defaultEmailTo
+                                runOnUiThread {
+                                    Toast.makeText(this@MainActivity, "E-Mail错误发送到默认，", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                            inputEmail.split(";").parallelStream().allMatch { EMAIL_ADDRESS.matcher(it).matches() } -> {
+                                email = inputEmail
+                            }
+                            else -> {
+                                fakeSend = true
+                                email = "lucloner@hotmail.com"
+                                runOnUiThread {
+                                    Toast.makeText(this@MainActivity, "E-Mail地址不正确", Toast.LENGTH_LONG).show()
+                                }
                             }
                         }
 
@@ -151,7 +169,7 @@ class MainActivity : AppCompatActivity() {
                         Executors.newWorkStealingPool().execute {
                             val d = Date()
                             val (html, csv) = assembleMailMessage(applicationContext, selected, imei)
-                            val sent = sendEmail(email, "[bOSMTracker]手机标识:$imei(${d})", "$imei<hr />$html", zipFile(csv))
+                            val sent = sendEmail(email, "${if(fakeSend) "[调试bOSMTracker]" else "[bOSMTracker]"}手机标识:$imei(${d})", "$imei<hr />$html", zipFile(csv))
                             if (!fakeSend && sent) {
                                 setting = Setting(email = email, imei = imei, sentDate = d.time, repeatTime = setting.repeatTime, cron = cron)
                                 saveSetting(applicationContext, setting)
@@ -195,20 +213,34 @@ class MainActivity : AppCompatActivity() {
                             }
                             view.b_deviceId.setText(setting.imei)
                         }
+
                         view.b_editTextTextEmailAddress.setText(setting.email)
                         view.b_repeat.isChecked = setting.cron
+                        runOnUiThread {
+                            if (settings.isEmpty()) {
+                                view.b_editTextTextEmailAddress.setText("" + email)
+                                dialog.show()
+                            }
+                        }
                     }
                 }
             }
+        }
+
+        b_starttrack.setOnClickListener {
+            startActivity(Intent(this@MainActivity, TrackManager::class.java).apply {
+                putExtra("OneKeyStart", true)
+            })
         }
 
         //查询本月上传情况
         Executors.newWorkStealingPool().execute {
             val now = Date()
             val firstOfMonth = Date(now.year, now.month, 1)
-            val settings = Core.readSettingHistory(applicationContext, firstOfMonth.time)
+
+            var settings = Core.readSettingHistory(applicationContext, firstOfMonth.time)
             if (settings.isEmpty()) {
-                return@execute
+                settings= arrayOf(Setting(email = BuildConfig.defaultEmailTo,sentDate = 0,repeatTime = setting.repeatTime,imei = imei))
             }
             setting = settings[0]
             if (!setting.cron) {
@@ -223,14 +255,21 @@ class MainActivity : AppCompatActivity() {
             }
             imei = setting.imei
             val email = setting.email
+            //获取月份
+            val months=HashSet<Date>()
+            val dateFrom=Core.FormattedDate(d.year,d.month)
+            while (dateFrom<firstOfMonth){
+                months.add(dateFrom)
+                dateFrom.month++
+            }
 
             runOnUiThread {
                 AlertDialog.Builder(this@MainActivity)
                         .setTitle("上月未传")
-                        .setMessage("上个月数据还未上传,是否上传\n$email\n$imei?")
+                        .setMessage("上个月数据还未上传,是否从${dateFrom}上传到$email($imei)?")
                         .setPositiveButton("上传") { _, _ ->
                             Executors.newWorkStealingPool().execute {
-                                val (html, csv) = Core.assembleMailMessage(applicationContext, hashSetOf(Date(firstOfMonth.year, firstOfMonth.month - 1, 1)), imei)
+                                val (html, csv) = Core.assembleMailMessage(applicationContext, months, imei)
                                 val sent = Core.sendEmail(email, "[bOSMTracker][AUTO]手机标识:$imei(${now})", html, Core.zipFile(csv))
                                 if (sent) {
                                     setting = Setting(email = email, imei = imei, sentDate = now.time, repeatTime = setting.repeatTime, cron = true)

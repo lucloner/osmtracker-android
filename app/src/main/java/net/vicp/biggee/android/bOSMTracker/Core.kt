@@ -19,6 +19,8 @@ import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.BuildConfig
 import java.io.*
 import java.util.*
+import java.util.stream.Collector
+import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import javax.activation.DataHandler
@@ -36,6 +38,7 @@ import kotlin.collections.set
 
 
 object Core {
+    var stopActiveTrack= Runnable {  }
 
     fun sendEmail(to: String,
                   subject: String = "JavaMail APIs Test",
@@ -58,7 +61,11 @@ object Core {
             // create a message
             val msg = MimeMessage(session)
             msg.setFrom(from)
-            val address = arrayOf(InternetAddress(to))
+            val address = to.split(";")
+                    .parallelStream()
+                    .map{InternetAddress(it)}
+                    .collect(Collectors.toList())
+                    .toTypedArray()
             msg.setRecipients(Message.RecipientType.TO, address)
             msg.subject = subject
             msg.sentDate = Date()
@@ -220,7 +227,7 @@ object Core {
         return setting.toTypedArray()
     }
 
-    fun assembleMailMessage(applicationContext: Context, months: Set<Date>, imei: String): Pair<String, File> {
+    fun assembleMailMessage(applicationContext: Context, months: Set<Date>, imei: String): Pair<String, File?> {
         val sorted = months.sorted()
         val last = sorted.last()
         val startDate = sorted.first().time
@@ -247,7 +254,7 @@ object Core {
 
         //找不到返回
         if (trackers.isEmpty()) {
-            return Pair<String, File>("找不到符合条件的记录", csv)
+            return Pair<String, File?>("找不到符合条件的记录", null)
         }
 
         var maxCols = 3
@@ -273,7 +280,8 @@ object Core {
         return Pair<String, File>(html.toString(), csv)
     }
 
-    fun zipFile(file: File): File {
+    fun zipFile(file: File?): File? {
+        file?:return null
         val zipFile = File.createTempFile("csv", ".zip")
         ZipOutputStream(zipFile.outputStream().buffered()).use { fOut ->
             file.inputStream().buffered().use { fIn ->
@@ -284,4 +292,6 @@ object Core {
         }
         return zipFile
     }
+
+
 }

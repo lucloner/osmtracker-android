@@ -17,6 +17,15 @@ smtpServer = 发送服务器
 smtpUser = 用户名
 smtpPass = 密码
 defaultEmailTo = 默认发送的邮件地址
+sdk.dir = 安卓sdk的位置
+例如:
+    defaultEmailTo = shidimeng@sh.chinamobile.com
+    smtpUser = 13482580515@139.com
+    smtpServer = smtp.139.com
+    smtpPass = *********
+
+运行gradlew assembleDebug生成APK安装包
+位置是app/build/outputs/apk/debug/app-debug.apk
 
 以下为原始说明：
 Get it on Google Play https://play.google.com/store/apps/details?id=net.osmtracker

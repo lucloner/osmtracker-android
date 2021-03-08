@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } catch (e: Exception) {
-            Log.e(this::class.java.simpleName, "$e${e.stackTraceToString()}");
+            Log.e(this::class.java.simpleName, "$e${e.stackTraceToString()}")
         }
 
         b_textView.append("\n\t设备标识:$imei\n\t${InputStreamReader(resources.assets.open("text.txt")).readText().replace("\n", "\n\t")}")
@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
 
                     val arrayAdapter = object : ArrayAdapter<Date>(this@MainActivity, android.R.layout.simple_list_item_1, month.toList()) {
                         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                            val vDate = CheckBox(context).apply {
+                            return CheckBox(context).apply {
                                 val d = getItem(position)
                                 text = d?.toString() ?: "空"
                                 setOnCheckedChangeListener { _, isChecked ->
@@ -125,7 +125,6 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
                             }
-                            return vDate
                         }
                     }
                     view.b_dateList.apply {

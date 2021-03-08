@@ -52,9 +52,9 @@ object Core {
 
         // create some properties and get the default Session
         val props = Properties()
-        props.put("mail.smtp.host", host)
+        props["mail.smtp.host"] = host
         if (debug) props["mail.debug"] = debug
-        props["mail.smtp.auth"] = "true";
+        props["mail.smtp.auth"] = "true"
 
         val session: Session = Session.getInstance(props, null)
         session.debug = debug
@@ -156,7 +156,7 @@ object Core {
         return data
     }
 
-    fun readTrackerPoint(context: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
+    private fun readTrackerPoint(context: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val data = LongSparseArray<Map<String, String>>()
         val importantCols = arrayOf(TrackContentProvider.Schema.COL_LATITUDE, TrackContentProvider.Schema.COL_LONGITUDE)
@@ -195,7 +195,7 @@ object Core {
         return data
     }
 
-    fun printTable(data: LongSparseArray<Map<String, String>>, table: String = "<table border=\"1\"><tr><td>", tr: String = "</td></tr><tr><td>", td: String = "</td><td>", closeTable: String = "</td></tr></table>"): String {
+    private fun printTable(data: LongSparseArray<Map<String, String>>, table: String = "<table border=\"1\"><tr><td>", tr: String = "</td></tr><tr><td>", td: String = "</td><td>", closeTable: String = "</td></tr></table>"): String {
         if (data.isEmpty()) {
             return ""
         }
@@ -288,7 +288,7 @@ object Core {
                 dataCols.keys.iterator().forEach { colName ->
                     data.append(",${row[colName]}")
                 }
-                csv.appendText("${data.toString()}\n")
+                csv.appendText("$data\n")
             }
         }
 

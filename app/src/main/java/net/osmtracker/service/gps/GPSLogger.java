@@ -51,28 +51,23 @@ public class GPSLogger extends Service implements LocationListener {
 	 * Are we currently tracking ?
 	 */
 	private boolean isTracking = false;
-	
+
 	/**
 	 * Is GPS enabled ?
 	 */
 	private boolean isGpsEnabled = false;
 
 	/**
-	 * Use barometer yes/no ?
-	 */
-	private boolean use_barometer = false;
-	
-	/**
 	 * System notification id.
 	 */
 	private static final int NOTIFICATION_ID = 1;
-	private static String CHANNEL_ID = "GPSLogger_Channel";
-	
+	private static final String CHANNEL_ID = "GPSLogger_Channel";
+
 	/**
 	 * Last known location
 	 */
 	private Location lastLocation;
-	
+
 	/**
 	 * LocationManager
 	 */
@@ -92,27 +87,26 @@ public class GPSLogger extends Service implements LocationListener {
 	 * the interval (in ms) to log GPS fixes defined in the preferences
 	 */
 	private long gpsLoggingInterval;
-	private long gpsLoggingMinDistance;
-	
+
 	/**
 	 * sensors for magnetic orientation
 	 */
-	private SensorListener sensorListener = new SensorListener();
+	private final SensorListener sensorListener = new SensorListener();
 
 	/**
 	 * sensor for atmospheric pressure
 	 */
-	private PressureListener pressureListener = new PressureListener();
+	private final PressureListener pressureListener = new PressureListener();
 
 	/**
 	 * Receives Intent for way point tracking, and stop/start logging.
 	 */
-	private BroadcastReceiver receiver = new BroadcastReceiver() {
-		
+	private final BroadcastReceiver receiver = new BroadcastReceiver() {
+
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			Log.v(TAG, "Received intent " + intent.getAction());
-			
+
 			if (OSMTracker.INTENT_TRACK_WP.equals(intent.getAction())) {
 				// Track a way point
 				Bundle extras = intent.getExtras();
@@ -122,7 +116,7 @@ public class GPSLogger extends Service implements LocationListener {
 					if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 						lastLocation = lmgr.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 						if (lastLocation != null) {
-							Long trackId = extras.getLong(TrackContentProvider.Schema.COL_TRACK_ID);
+							long trackId = extras.getLong(TrackContentProvider.Schema.COL_TRACK_ID);
 							String uuid = extras.getString(OSMTracker.INTENT_KEY_UUID);
 							String name = extras.getString(OSMTracker.INTENT_KEY_NAME);
 							String link = extras.getString(OSMTracker.INTENT_KEY_LINK);
@@ -138,7 +132,7 @@ public class GPSLogger extends Service implements LocationListener {
 				// Update an existing waypoint
 				Bundle extras = intent.getExtras();
 				if (extras != null) {
-					Long trackId = extras.getLong(TrackContentProvider.Schema.COL_TRACK_ID);
+					long trackId = extras.getLong(TrackContentProvider.Schema.COL_TRACK_ID);
 					String uuid = extras.getString(OSMTracker.INTENT_KEY_UUID);
 					String name = extras.getString(OSMTracker.INTENT_KEY_NAME);
 					String link = extras.getString(OSMTracker.INTENT_KEY_LINK);
@@ -151,13 +145,13 @@ public class GPSLogger extends Service implements LocationListener {
 					String uuid = extras.getString(OSMTracker.INTENT_KEY_UUID);
 					dataHelper.deleteWayPoint(uuid);
 				}
-			} else if (OSMTracker.INTENT_START_TRACKING.equals(intent.getAction()) ) {
+			} else if (OSMTracker.INTENT_START_TRACKING.equals(intent.getAction())) {
 				Bundle extras = intent.getExtras();
 				if (extras != null) {
-					Long trackId = extras.getLong(TrackContentProvider.Schema.COL_TRACK_ID);
+					long trackId = extras.getLong(TrackContentProvider.Schema.COL_TRACK_ID);
 					startTracking(trackId);
 				}
-			} else if (OSMTracker.INTENT_STOP_TRACKING.equals(intent.getAction()) ) {
+			} else if (OSMTracker.INTENT_STOP_TRACKING.equals(intent.getAction())) {
 				stopTrackingAndSave();
 			}
 		}
@@ -202,18 +196,21 @@ public class GPSLogger extends Service implements LocationListener {
 			return GPSLogger.this;
 		}
 	}
-	
+
 	@Override
-	public void onCreate() {	
+	public void onCreate() {
 		Log.v(TAG, "Service onCreate()");
 		dataHelper = new DataHelper(this);
 
 		//read the logging interval from preferences
 		gpsLoggingInterval = Long.parseLong(PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getString(
 				OSMTracker.Preferences.KEY_GPS_LOGGING_INTERVAL, OSMTracker.Preferences.VAL_GPS_LOGGING_INTERVAL)) * 1000;
-		gpsLoggingMinDistance = Long.parseLong(PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getString(
+		long gpsLoggingMinDistance = Long.parseLong(PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getString(
 				OSMTracker.Preferences.KEY_GPS_LOGGING_MIN_DISTANCE, OSMTracker.Preferences.VAL_GPS_LOGGING_MIN_DISTANCE));
-		use_barometer =  PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean(
+		/*
+		  Use barometer yes/no ?
+		 */
+		boolean use_barometer = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext()).getBoolean(
 				OSMTracker.Preferences.KEY_USE_BAROMETER, OSMTracker.Preferences.VAL_USE_BAROMETER);
 
 		// Register our broadcast receiver
@@ -375,12 +372,14 @@ public class GPSLogger extends Service implements LocationListener {
 
 	/**
 	 * Getter for gpsEnabled
+	 *
 	 * @return true if GPS is enabled, otherwise false.
 	 */
+	@SuppressWarnings({"unused", "RedundantSuppression"})
 	public boolean isGpsEnabled() {
 		return isGpsEnabled;
 	}
-	
+
 	/**
 	 * Setter for isTracking
 	 * @return true if we're currently tracking, otherwise false.

@@ -6,7 +6,6 @@ import android.app.AlertDialog;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -43,6 +42,8 @@ import net.osmtracker.util.FileSystemUtils;
 import net.vicp.biggee.android.bOSMTracker.Core;
 import net.vicp.biggee.android.osmtracker.R;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.util.Date;
 
@@ -76,39 +77,88 @@ public class TrackManager extends AppCompatActivity
 	//Use to know which view holder's trackId was selected on the recycler view
 	private long contextMenuSelectedTrackid = TRACK_ID_NO_TRACK;
 
-	/** The previous item visible, or -1; for scrolling back to its position in {#onResume()} */
+	/**
+	 * The previous item visible, or -1; for scrolling back to its position in {#onResume()}
+	 */
 	private int prevItemVisible = -1;
 
 	// This variable is used to communicate between code trying to start TrackLogger
 	// and the code that actually starts it when have GPS permissions
 	private Intent TrackLoggerStartIntent = null;
 
-	private RecyclerView recyclerView;
 	private TrackListRVAdapter recyclerViewAdapter;
-	private FloatingActionButton fab;
+
+	// This should be static because contains an AsyncTask
+	// AsyncTasks has to live inside a static environment
+	// That's why the Context is passed as a parameter
+	private static void prepareAndShareTrack(final long trackId, Context context) {
+		// Create temp file that will remain in cache
+		//noinspection deprecation
+		new ExportToTempFileTask(context, trackId) {
+			@Override
+			protected void executionCompleted() {
+				shareFile(this.getTmpFile(), context);
+			}
+
+			@Override
+			protected void onPostExecute(Boolean success) {
+				dialog.dismiss();
+				if (!success) {
+					new AlertDialog.Builder(context)
+							.setTitle(android.R.string.dialog_alert_title)
+							.setMessage(context.getResources()
+									.getString(R.string.trackmgr_prepare_for_share_error)
+									.replace("{0}", Long.toString(trackId)))
+							.setIcon(android.R.drawable.ic_dialog_alert)
+							.setNeutralButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
+							.show();
+				} else {
+					executionCompleted();
+				}
+			}
+		}.execute();
+	}
+
+	@Override
+	protected void onResume() {
+		setRecyclerView();
+
+		TextView emptyView = findViewById(R.id.trackmgr_empty);
+		//No tracks
+		if (recyclerViewAdapter.getItemCount() == 0) {
+			emptyView.setVisibility(View.VISIBLE);
+		} else {
+			emptyView.setVisibility(View.INVISIBLE);
+			// Is any track active?
+			currentTrackId = DataHelper.getActiveTrackId(getContentResolver());
+			if (currentTrackId != TRACK_ID_NO_TRACK) {
+				Snackbar.make(findViewById(R.id.trackmgr_fab),
+						getResources().getString(R.string.trackmgr_continuetrack_hint)
+								.replace("{0}", Long.toString(currentTrackId)), Snackbar.LENGTH_LONG)
+						.setAction("Action", null).show();
+			}
+		}
+
+		super.onResume();
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.trackmanager);
 
-		Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+		Toolbar myToolbar = findViewById(R.id.my_toolbar);
 		setSupportActionBar(myToolbar);
 
 		if (savedInstanceState != null) {
 			prevItemVisible = savedInstanceState.getInt(PREV_VISIBLE, -1);
 		}
 
-		fab = findViewById(R.id.trackmgr_fab);
-		fab.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				startTrackLoggerForNewTrack();
-			}
-		});
+		FloatingActionButton fab = findViewById(R.id.trackmgr_fab);
+		fab.setOnClickListener(view -> startTrackLoggerForNewTrack());
 
-		if(getIntent().hasExtra("OneKeyStart")
-				&&getIntent().getBooleanExtra("OneKeyStart",false)){
+		if (getIntent().hasExtra("OneKeyStart")
+				&& getIntent().getBooleanExtra("OneKeyStart", false)) {
 			runOnUiThread(fab::performClick);
 			Core.INSTANCE.setStopActiveTrack(this::stopActiveTrack);
 			return;
@@ -125,35 +175,11 @@ public class TrackManager extends AppCompatActivity
 		}
 	}
 
-	@Override
-	protected void onResume() {
-		setRecyclerView();
-
-		TextView emptyView = findViewById(R.id.trackmgr_empty);
-		//No tracks
-		if (recyclerViewAdapter.getItemCount() == 0) {
-			emptyView.setVisibility(View.VISIBLE);
-		} else{
-			emptyView.setVisibility(View.INVISIBLE);
-			// Is any track active?
-			currentTrackId = DataHelper.getActiveTrackId(getContentResolver());
-			if (currentTrackId != TRACK_ID_NO_TRACK) {
-				Snackbar.make(findViewById(R.id.trackmgr_fab),
-						getResources().getString(R.string.trackmgr_continuetrack_hint)
-						.replace("{0}", Long.toString(currentTrackId)), Snackbar.LENGTH_LONG)
-						.setAction("Action", null).show();
-			}
-		}
-
-		super.onResume();
-	}
-
-
 	/**
 	 *
 	 */
 	private void setRecyclerView() {
-		recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
+		RecyclerView recyclerView = findViewById(R.id.recyclerview);
 
 		LinearLayoutManager layoutManager = new LinearLayoutManager(this,
 				LinearLayoutManager.VERTICAL, false);
@@ -170,12 +196,6 @@ public class TrackManager extends AppCompatActivity
 
 		recyclerViewAdapter = new TrackListRVAdapter(this, cursor, this);
 		recyclerView.setAdapter(recyclerViewAdapter);
-	}
-
-	@Override
-	protected void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		outState.putInt(PREV_VISIBLE, prevItemVisible);
 	}
 
 	@Override
@@ -204,25 +224,63 @@ public class TrackManager extends AppCompatActivity
 
 			// Remove the 'stop tracking' option
 			menu.findItem(R.id.trackmgr_menu_stopcurrenttrack).setVisible(false);
-        }
+		}
 
-        // Remove "delete all" button if no tracks
-        int tracksCount = recyclerViewAdapter.getItemCount();
-        menu.findItem(R.id.trackmgr_menu_deletetracks).setVisible(tracksCount > 0);
-        menu.findItem(R.id.trackmgr_menu_exportall).setVisible(tracksCount > 0);
+		// Remove "delete all" button if no tracks
+		int tracksCount = recyclerViewAdapter.getItemCount();
+		menu.findItem(R.id.trackmgr_menu_deletetracks).setVisible(tracksCount > 0);
+		menu.findItem(R.id.trackmgr_menu_exportall).setVisible(tracksCount > 0);
 
-        return super.onPrepareOptionsMenu(menu);
-    }
+		return super.onPrepareOptionsMenu(menu);
+	}
 
-    @SuppressLint("NonConstantResourceId")
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.trackmgr_menu_newtrack:
-                startTrackLoggerForNewTrack();
-                break;
-            case R.id.trackmgr_menu_continuetrack:
-                Intent i = new Intent(this, TrackLogger.class);
+	@Override
+	protected void onSaveInstanceState(@NotNull Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putInt(PREV_VISIBLE, prevItemVisible);
+	}
+
+
+	/**
+	 * Starts TrackLogger Activity if GPS Permission is granted
+	 * If there's no GPS Permission, then requests it and the OnPermissionResult will call this
+	 * method again if granted
+	 */
+	private void tryStartTrackLogger(Intent intent) {
+		// If GPS Permission Granted
+		if (ContextCompat.checkSelfPermission(this,
+				Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+			Log.i(TAG, "Granted on try");
+			startActivity(intent);
+		} else {
+			// Permission is not granted
+			Log.i(TAG, "Not Granted on try");
+			this.TrackLoggerStartIntent = intent;
+			// Should we show an explanation?
+			if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+					Manifest.permission.ACCESS_FINE_LOCATION)) {
+				Log.i(TAG, "Should explain");
+				Toast.makeText(this, "Can't continue without GPS permission",
+						Toast.LENGTH_LONG).show();
+			}
+
+			// No explanation needed, just request the permission.
+			Log.i(TAG, "Should not explain");
+			ActivityCompat.requestPermissions(this,
+					new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, RC_GPS_PERMISSION);
+
+		}
+	}
+
+	@SuppressLint("NonConstantResourceId")
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.trackmgr_menu_newtrack:
+				startTrackLoggerForNewTrack();
+				break;
+			case R.id.trackmgr_menu_continuetrack:
+				Intent i = new Intent(this, TrackLogger.class);
                 i.putExtra(TrackLogger.STATE_IS_TRACKING, true);
                 i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, currentTrackId);
                 tryStartTrackLogger(i);
@@ -232,24 +290,16 @@ public class TrackManager extends AppCompatActivity
                 break;
             case R.id.trackmgr_menu_deletetracks:
                 // Confirm and delete all track
-                new AlertDialog.Builder(this)
-                        .setTitle(R.string.trackmgr_contextmenu_delete)
-                        .setMessage(getResources().getString(R.string.trackmgr_deleteall_confirm))
-                        .setCancelable(true)
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .setPositiveButton(R.string.menu_deletetracks, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                deleteAllTracks();
-                                dialog.dismiss();
-                            }
-                        })
-                        .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        }).create().show();
+				new AlertDialog.Builder(this)
+						.setTitle(R.string.trackmgr_contextmenu_delete)
+						.setMessage(getResources().getString(R.string.trackmgr_deleteall_confirm))
+						.setCancelable(true)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setPositiveButton(R.string.menu_deletetracks, (dialog, which) -> {
+							deleteAllTracks();
+							dialog.dismiss();
+						})
+						.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel()).create().show();
                 break;
             case R.id.trackmgr_menu_exportall:
                 // Confirm
@@ -272,38 +322,6 @@ public class TrackManager extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-
-	/**
-	 * Starts TrackLogger Activity if GPS Permission is granted
-	 * If there's no GPS Permission, then requests it and the OnPermissionResult will call this
-	 * method again if granted
-	 */
-	private void tryStartTrackLogger(Intent intent){
-		// If GPS Permission Granted
-		if (ContextCompat.checkSelfPermission(this,
-				Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-			Log.i(TAG,"Granted on try");
-			startActivity(intent);
-		} else{
-			// Permission is not granted
-			Log.i(TAG,"Not Granted on try");
-			this.TrackLoggerStartIntent = intent;
-			// Should we show an explanation?
-			if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-					Manifest.permission.ACCESS_FINE_LOCATION)) {
-				Log.i(TAG,"Should explain");
-				Toast.makeText(this, "Can't continue without GPS permission",
-						Toast.LENGTH_LONG).show();
-			}
-
-			// No explanation needed, just request the permission.
-			Log.i(TAG,"Should not explain");
-			ActivityCompat.requestPermissions(this,
-					new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, RC_GPS_PERMISSION);
-
-		}
-	}
-
 	/**
 	 * This method prepare the new track and set an id, then start a new TrackLogger with the new track id
 	 */
@@ -318,10 +336,9 @@ public class TrackManager extends AppCompatActivity
 		} catch (CreateTrackException cte) {
 			Toast.makeText(this,
 					getResources().getString(R.string.trackmgr_newtrack_error).replace("{0}",
-							cte.getMessage()), Toast.LENGTH_LONG).show();
+							"" + cte.getMessage()), Toast.LENGTH_LONG).show();
 		}
 	}
-
 
     /* Export tracks
      * onlySelectedTrack: will export only the track selected on the recycle view.
@@ -352,6 +369,7 @@ public class TrackManager extends AppCompatActivity
 
 		// Invoke the Async Task
 
+		//noinspection deprecation
 		new ExportToStorageTask(this, trackIds) {
 			@Override
 			protected void onPostExecute(Boolean success) {
@@ -363,12 +381,7 @@ public class TrackManager extends AppCompatActivity
 									.replace("{0}", super.getErrorMsg()))
 							.setIcon(android.R.drawable.ic_dialog_alert)
 							.setNeutralButton(android.R.string.ok,
-							new DialogInterface.OnClickListener() {
-								@Override
-								public void onClick(DialogInterface dialog, int which) {
-									dialog.dismiss();
-								}
-							}).show();
+									(dialog, which) -> dialog.dismiss()).show();
 				}else{
 					Snackbar.make(findViewById(R.id.trackmgr_fab),
 							getResources().getString(R.string.various_export_finished),
@@ -386,29 +399,71 @@ public class TrackManager extends AppCompatActivity
 		contextMenuSelectedTrackid = trackId;
 
 		menu.setHeaderTitle(getResources().getString(R.string.trackmgr_contextmenu_title).replace("{0}", Long.toString(contextMenuSelectedTrackid)));
-		if(currentTrackId == contextMenuSelectedTrackid){
-			// the selected one is the active track, so we will show the stop item
-			menu.findItem(R.id.trackmgr_contextmenu_stop).setVisible(true);
-		}else{
-            // the selected item is not active, so we need to hide the stop item
-            menu.findItem(R.id.trackmgr_contextmenu_stop).setVisible(false);
-        }
-        menu.setHeaderTitle(getResources().getString(R.string.trackmgr_contextmenu_title).replace("{0}", Long.toString(contextMenuSelectedTrackid)));
-        if (currentTrackId == contextMenuSelectedTrackid) {
-            // User has pressed the active track, hide the delete option
-            menu.removeItem(R.id.trackmgr_contextmenu_delete);
-        }
-    }
+		// the selected one is the active track, so we will show the stop item
+		// the selected item is not active, so we need to hide the stop item
+		menu.findItem(R.id.trackmgr_contextmenu_stop).setVisible(currentTrackId == contextMenuSelectedTrackid);
+		menu.setHeaderTitle(getResources().getString(R.string.trackmgr_contextmenu_title).replace("{0}", Long.toString(contextMenuSelectedTrackid)));
+		if (currentTrackId == contextMenuSelectedTrackid) {
+			// User has pressed the active track, hide the delete option
+			menu.removeItem(R.id.trackmgr_contextmenu_delete);
+		}
+	}
 
-    @SuppressLint("NonConstantResourceId")
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        Intent i;
+	private void uploadTrack(long trackId) {
+		Intent i = new Intent(this, OpenStreetMapUpload.class);
+		i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
+		startActivity(i);
+	}
 
-        switch (item.getItemId()) {
-            case R.id.trackmgr_contextmenu_stop:
-                // stop the active track
-                stopActiveTrack();
+	private void displayTrack(long trackId) {
+		Log.e(TAG, "On Display Track");
+		// Start display track activity, with or without OSM background
+		Intent i;
+		boolean useOpenStreetMapBackground = PreferenceManager
+				.getDefaultSharedPreferences(this).getBoolean(
+						OSMTracker.Preferences.KEY_UI_DISPLAYTRACK_OSM,
+						OSMTracker.Preferences.VAL_UI_DISPLAYTRACK_OSM);
+		if (useOpenStreetMapBackground) {
+			i = new Intent(this, DisplayTrackMap.class);
+		} else {
+			i = new Intent(this, DisplayTrack.class);
+		}
+		i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
+		startActivity(i);
+	}
+
+	private boolean writeExternalStoragePermissionNotGranted() {
+		Log.e("CHECKING", "Write");
+		return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED;
+	}
+
+	@Override
+	public void onClick(long trackId) {
+		Intent i;
+		if (trackId == currentTrackId) {
+			// continue recording the current track
+			i = new Intent(this, TrackLogger.class);
+			i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, currentTrackId);
+			i.putExtra(TrackLogger.STATE_IS_TRACKING, true);
+			tryStartTrackLogger(i);
+
+		} else {
+			// show track info
+			i = new Intent(this, TrackDetail.class);
+			i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
+			startActivity(i);
+		}
+	}
+
+	@SuppressLint("NonConstantResourceId")
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		Intent i;
+
+		switch (item.getItemId()) {
+			case R.id.trackmgr_contextmenu_stop:
+				// stop the active track
+				stopActiveTrack();
                 break;
 
             case R.id.trackmgr_contextmenu_resume:
@@ -421,25 +476,17 @@ public class TrackManager extends AppCompatActivity
 
             case R.id.trackmgr_contextmenu_delete:
                 // Confirm and delete selected track
-                new AlertDialog.Builder(this)
-                        .setTitle(R.string.trackmgr_contextmenu_delete)
-                        .setMessage(getResources().getString(R.string.trackmgr_delete_confirm)
-                                .replace("{0}", Long.toString(contextMenuSelectedTrackid)))
-                        .setCancelable(true)
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                deleteTrack(contextMenuSelectedTrackid);
-                                dialog.dismiss();
-                            }
-                        })
-                        .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        }).create().show();
+				new AlertDialog.Builder(this)
+						.setTitle(R.string.trackmgr_contextmenu_delete)
+						.setMessage(getResources().getString(R.string.trackmgr_delete_confirm)
+								.replace("{0}", Long.toString(contextMenuSelectedTrackid)))
+						.setCancelable(true)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+							deleteTrack(contextMenuSelectedTrackid);
+							dialog.dismiss();
+						})
+						.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel()).create().show();
                 break;
 
             case R.id.trackmgr_contextmenu_export:
@@ -486,59 +533,15 @@ public class TrackManager extends AppCompatActivity
                 break;
         }
         return super.onContextItemSelected(item);
-    }
-
-	private void uploadTrack(long trackId){
-		Intent i = new Intent(this, OpenStreetMapUpload.class);
-		i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
-		startActivity(i);
-	}
-
-	private void displayTrack(long trackId){
-		Log.e(TAG, "On Display Track");
-		// Start display track activity, with or without OSM background
-		Intent i;
-		boolean useOpenStreetMapBackground = PreferenceManager
-				.getDefaultSharedPreferences(this).getBoolean(
-						OSMTracker.Preferences.KEY_UI_DISPLAYTRACK_OSM,
-                        OSMTracker.Preferences.VAL_UI_DISPLAYTRACK_OSM);
-        if (useOpenStreetMapBackground) {
-            i = new Intent(this, DisplayTrackMap.class);
-        } else {
-            i = new Intent(this, DisplayTrack.class);
-        }
-        i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
-        startActivity(i);
-    }
-
-    private boolean writeExternalStoragePermissionNotGranted() {
-        Log.e("CHECKING", "Write");
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED;
-    }
-
-    @Override
-    public void onClick(long trackId) {
-        Intent i;
-        if (trackId == currentTrackId) {
-            // continue recording the current track
-            i = new Intent(this, TrackLogger.class);
-			i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, currentTrackId);
-			i.putExtra(TrackLogger.STATE_IS_TRACKING, true);
-			tryStartTrackLogger(i);
-
-		} else {
-			// show track info
-			i = new Intent(this, TrackDetail.class);
-			i.putExtra(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
-			startActivity(i);
-		}
 	}
 
 	/**
 	 * Creates a new track, in DB and on SD card
+	 *
+	 * @throws CreateTrackException 1
 	 * @returns The ID of the new track
-	 * @throws CreateTrackException
 	 */
+	@SuppressWarnings("RedundantThrows")
 	private long createNewTrack() throws CreateTrackException {
 		Date startDate = new Date();
 
@@ -556,41 +559,6 @@ public class TrackManager extends AppCompatActivity
 		setActiveTrack(trackId);
 
 		return trackId;
-	}
-
-	// This should be static because contains an AsyncTask
-	// AsyncTasks has to live inside a static environment
-	// That's why the Context is passed as a parameter
-	private static void prepareAndShareTrack(final long trackId, Context context) {
-		// Create temp file that will remain in cache
-		new ExportToTempFileTask(context, trackId){
-			@Override
-			protected void executionCompleted(){
-				shareFile(this.getTmpFile(), context);
-			}
-
-			@Override
-			protected void onPostExecute(Boolean success) {
-				dialog.dismiss();
-				if (!success) {
-					new AlertDialog.Builder(context)
-							.setTitle(android.R.string.dialog_alert_title)
-							.setMessage(context.getResources()
-									.getString(R.string.trackmgr_prepare_for_share_error)
-									.replace("{0}", Long.toString(trackId)))
-							.setIcon(android.R.drawable.ic_dialog_alert)
-							.setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-								@Override
-								public void onClick(DialogInterface dialog, int which) {
-									dialog.dismiss();
-								}
-							})
-							.show();
-				}else{
-					executionCompleted();
-				}
-			}
-		}.execute();
 	}
 
 	/**
@@ -635,6 +603,7 @@ public class TrackManager extends AppCompatActivity
 	 * (export or delete track) to force the UI reflect the change.
 	 */
 	private void updateTrackItemsInRecyclerView() {
+		//noinspection deprecation
 		recyclerViewAdapter.getCursorAdapter().getCursor().requery();
 		recyclerViewAdapter.notifyDataSetChanged();
 	}
@@ -704,8 +673,8 @@ public class TrackManager extends AppCompatActivity
 		}
 	}
 
-	public void onRequestPermissionsResult(int requestCode, String permissions[],
-										   int[] grantResults) {
+	public void onRequestPermissionsResult(int requestCode, @NotNull String[] permissions,
+										   @NotNull int[] grantResults) {
 		switch (requestCode) {
 			case RC_WRITE_PERMISSIONS_EXPORT_ALL: {
 				// If request is cancelled, the result arrays are empty.

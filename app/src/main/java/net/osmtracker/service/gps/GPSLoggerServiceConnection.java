@@ -21,7 +21,7 @@ public class GPSLoggerServiceConnection implements ServiceConnection {
 	/**
 	 * Reference to TrackLogger activity
 	 */
-	private TrackLogger activity;
+	private final TrackLogger activity;
 	
 	public GPSLoggerServiceConnection(TrackLogger tl) {
 		activity = tl;
@@ -35,15 +35,15 @@ public class GPSLoggerServiceConnection implements ServiceConnection {
 
 	@Override
 	public void onServiceConnected(ComponentName name, IBinder service) {
-		
-		activity.setGpsLogger( ((GPSLogger.GPSLoggerBinder) service).getService());
+
+		activity.setGpsLogger(((GPSLogger.GPSLoggerBinder) service).getService());
 
 		// Update record status regarding of current tracking state
-		GpsStatusRecord gpsStatusRecord = (GpsStatusRecord) activity.findViewById(R.id.gpsStatus);
+		GpsStatusRecord gpsStatusRecord = activity.findViewById(R.id.gpsStatus);
 		if (gpsStatusRecord != null) {
 			gpsStatusRecord.manageRecordingIndicator(activity.getGpsLogger().isTracking());
 		}
-		
+
 		// If not already tracking, start tracking
 		if (!activity.getGpsLogger().isTracking()) {
 			activity.setEnabledActionButtons(false);

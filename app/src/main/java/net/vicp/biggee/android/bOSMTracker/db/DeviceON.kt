@@ -18,6 +18,9 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
         synchronized(timeStamp) {
             timeStamp = max(++timeStamp, System.currentTimeMillis())
         }
+        if (trackPointTimeStamp == 0L || point_timestamp == 0L || trackPointTimeStamp == point_timestamp) {
+            return
+        }
         intentAction = "${intent?.action?.split(".")?.last()}"
         point_timestamp = trackPointTimeStamp
 

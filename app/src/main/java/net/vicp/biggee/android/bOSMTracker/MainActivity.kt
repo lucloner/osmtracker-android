@@ -53,7 +53,11 @@ class MainActivity : AppCompatActivity() {
 
         //runTestSuit
         Executors.newWorkStealingPool().execute {
-//            Core.TestSuit.testDeviceON(applicationContext)
+            try {
+                //            Core.TestSuit.testDeviceON(applicationContext)
+                Log.e(this::class.simpleName, "deleteInvalid0 ${Core.TestSuit.deleteInvalid(applicationContext)}")
+            } catch (_: Exception) {
+            }
         }
 
         var imei = "没有获取到IMEI"

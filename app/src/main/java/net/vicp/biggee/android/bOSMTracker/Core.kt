@@ -378,5 +378,7 @@ object Core {
             Log.e("testDeviceON", "1===" + db.getDeviceON(0))
             Log.e("testDeviceON", "2===" + db.getDeviceON(-1) ?: "non")
         }
+
+        fun deleteInvalid(applicationContext: Context) = DataCenter.getDB(applicationContext).dao().delDeviceON(0)
     }
 }

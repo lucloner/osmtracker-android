@@ -36,6 +36,9 @@ import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
 import kotlin.collections.HashMap
 import kotlin.collections.set
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
 
 
 object Core {
@@ -266,29 +269,48 @@ object Core {
             return Pair<String, File?>("找不到符合条件的记录", null)
         }
 
-        val dataCols = mapOf(Pair(TrackContentProvider.Schema.COL_TRACK_ID, "序号"),
-                Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "记录时间"),
+        val dataCols = mapOf(Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "记录时间"),
                 Pair(TrackContentProvider.Schema.COL_LONGITUDE, "经度"),
                 Pair(TrackContentProvider.Schema.COL_LATITUDE, "纬度"))
-        var head = "设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
+        var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
         csv.appendText("$head\n", Charset.forName("GB18030"))
 
         //获取任务记录
-        val trackersPoints = LongSparseArray<LongSparseArray<Map<String, String>>>()
+        var cnt = 1
+
         readTracker.keyIterator().forEach {
             val trackerPoints = readTrackerPoint(applicationContext, it)
-            trackersPoints.put(it, trackerPoints)
+
+            var chkRange = AreaRang(0.0, 0.0, -1.0)
+            var lastLine = ""
 
             //组装html
             html.append(printTable(trackerPoints))
             //组装excel
             head = "$imei,${trackers[it].values.joinToString(",")}"
-            trackerPoints.valueIterator().forEach { row ->
+            trackerPoints.valueIterator().forEach row@{ row ->
                 val data = StringBuilder(head)
                 dataCols.keys.iterator().forEach { colName ->
                     data.append(",${row[colName]}")
                 }
-                csv.appendText("$data\n")
+                val line = "${cnt++},$data\n"
+                val lat = row[TrackContentProvider.Schema.COL_LATITUDE]?.toDoubleOrNull()
+                        ?: return@row
+                val lon = row[TrackContentProvider.Schema.COL_LONGITUDE]?.toDoubleOrNull()
+                        ?: return@row
+                if (chkRange.testInRange(lat, lon)) {
+                    lastLine = line
+                    return@row
+                } else if (lastLine.isNotBlank()) {
+                    csv.appendText(lastLine)
+                }
+                chkRange = AreaRang(lat, lon, 10.0)
+                csv.appendText(line)
+                lastLine = ""
+            }
+
+            if (lastLine.isNotBlank()) {
+                csv.appendText(lastLine)
             }
         }
 
@@ -308,5 +330,24 @@ object Core {
         return zipFile
     }
 
+    class AreaRang(private val latitude: Double, private val longitude: Double, private val range: Double) {
+        private val longitudeToKilometers: Double = 111132.92
+        private val latitudeToKilometers: Double = 111412.84
 
+        /*      https://en.wikipedia.org/wiki/Geographic_coordinate_system
+                On the WGS84 spheroid, the length in meters of a degree of latitude at latitude φ (that is, the number of meters you would have to travel along a north–south line to move 1 degree in latitude, when at latitude φ), is about
+                111132.92 − 559.82 cos ⁡ 2 φ + 1.175 cos ⁡ 4 φ − 0.0023 cos ⁡ 6 φ {\displaystyle 111132.92-559.82\,\cos 2\varphi +1.175\,\cos 4\varphi -0.0023\,\cos 6\varphi } 111132.92-559.82\,\cos 2\varphi +1.175\,\cos 4\varphi -0.0023\,\cos 6\varphi [10]
+
+                Similarly, the length in meters of a degree of longitude can be calculated as
+                111412.84 cos ⁡ φ − 93.5 cos ⁡ 3 φ + 0.118 cos ⁡ 5 φ {\displaystyle 111412.84\,\cos \varphi -93.5\,\cos 3\varphi +0.118\,\cos 5\varphi } {\displaystyle 111412.84\,\cos \varphi -93.5\,\cos 3\varphi +0.118\,\cos 5\varphi }[10]
+
+                所以距离只是和纬度有关
+        */
+        private val latitudeRad = PI * latitude / 180
+        val metersPerLongitude = longitudeToKilometers * cos(latitudeRad) - cos(3 * latitudeRad) * 93.5 + cos(latitudeRad * 5) * 0.118
+        val metersPerLatitude = latitudeToKilometers - cos(latitudeRad * 2) * 559.82 + cos(latitudeRad * 4) * 1.175 - cos(latitudeRad * 6) * 0.0023
+
+        fun testInRange(latitude: Double, longitude: Double) = abs(latitude.minus(this.latitude).times(metersPerLatitude)) < range
+                && abs(longitude.minus(this.longitude).times(metersPerLongitude)) < range
+    }
 }

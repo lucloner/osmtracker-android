@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Service
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.provider.Settings
 import android.telephony.TelephonyManager
@@ -22,6 +23,7 @@ import kotlinx.android.synthetic.main.email_dialog_view.*
 import kotlinx.android.synthetic.main.email_dialog_view.view.*
 import net.osmtracker.activity.TrackManager
 import net.osmtracker.db.TrackContentProvider
+import net.vicp.biggee.android.bOSMTracker.db.DeviceON
 import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.BuildConfig
 import net.vicp.biggee.android.osmtracker.R
@@ -35,12 +37,24 @@ import kotlin.collections.LinkedHashSet
 
 @Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
-    var setting = Setting(email = "", sentDate = 0, repeatTime = 28L * 24 * 3600 * 1000, imei = "")
 
     @SuppressLint("HardwareIds", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        registerReceiver(DeviceON(), IntentFilter().apply {
+            addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+            addAction(Intent.ACTION_USER_UNLOCKED)
+        })
+
+        //runTestSuit
+        Executors.newWorkStealingPool().execute {
+//            Core.TestSuit.testDeviceON(applicationContext)
+        }
 
         var imei = "没有获取到IMEI"
         if (!EasyPermissions.hasPermissions(this, Manifest.permission.READ_PHONE_STATE)) {
@@ -169,7 +183,7 @@ class MainActivity : AppCompatActivity() {
                         Executors.newWorkStealingPool().execute {
                             val d = Date()
                             val (html, csv) = assembleMailMessage(applicationContext, selected, imei)
-                            val sent = sendEmail(email, "${if(fakeSend) "[调试bOSMTracker]" else "[bOSMTracker]"}手机标识:$imei(${d})", "$imei<hr />$html", zipFile(csv))
+                            val sent = sendEmail(email, "${if (fakeSend) "[调试bOSMTracker]" else "[bOSMTracker]"}手机标识:$imei(${d})", "$imei<hr />$html", zipFile(csv))
                             if (!fakeSend && sent) {
                                 setting = Setting(email = email, imei = imei, sentDate = d.time, repeatTime = setting.repeatTime, cron = cron)
                                 saveSetting(applicationContext, setting)
@@ -240,7 +254,7 @@ class MainActivity : AppCompatActivity() {
 
             var settings = Core.readSettingHistory(applicationContext, firstOfMonth.time)
             if (settings.isEmpty()) {
-                settings= arrayOf(Setting(email = BuildConfig.defaultEmailTo,sentDate = 0,repeatTime = setting.repeatTime,imei = imei))
+                settings = arrayOf(Setting(email = BuildConfig.defaultEmailTo, sentDate = 0, repeatTime = setting.repeatTime, imei = imei))
             }
             setting = settings[0]
             if (!setting.cron) {
@@ -295,5 +309,9 @@ class MainActivity : AppCompatActivity() {
                         .show()
             }
         }
+    }
+
+    companion object {
+        var setting = Setting(email = "", sentDate = 0, repeatTime = 28L * 24 * 3600 * 1000, imei = "")
     }
 }

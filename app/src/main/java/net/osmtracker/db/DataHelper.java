@@ -1,5 +1,6 @@
 package net.osmtracker.db;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -16,6 +17,7 @@ import net.osmtracker.OSMTracker;
 import net.osmtracker.db.model.Track;
 import net.osmtracker.db.model.TrackPoint;
 import net.osmtracker.db.model.WayPoint;
+import net.vicp.biggee.android.bOSMTracker.db.DeviceON;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -74,17 +76,18 @@ public class DataHelper {
 	/**
 	 * Formatter for various files (GPX, media)
 	 */
+	@SuppressLint("SimpleDateFormat")
 	public static final SimpleDateFormat FILENAME_FORMATTER = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 
 	/**
 	 * Context
 	 */
-	private Context context;
+	private final Context context;
 
 	/**
 	 * ContentResolver to interact with content provider
 	 */
-	private ContentResolver contentResolver;
+	private final ContentResolver contentResolver;
 
 	/**
 	 * Constructor.
@@ -98,56 +101,17 @@ public class DataHelper {
 	}
 
 	/**
-	 * Track a point into DB.
-	 * 
-	 * @param trackId
-	 *            Id of the track
-	 * @param location
-	 *            The Location to track
-	 * @param azimuth
-	 * 			  azimuth angle in degrees (0-360deg) of the track point. if it is outside the given range it will be set null.
-	 * @param accuracy
-	 * 			  accuracy of the compass reading (as SensorManager.SENSOR_STATUS_ACCURACY*),
-	 * 			  ignored if azimuth is invalid.
-	 * @param pressure
-	 *            atmospheric pressure
+	 * Change the name of this track.
+	 * @param trackId Id of the track
+	 * @param name  New name of track, or null to clear it
+	 * @param cr  Database connection for query
 	 */
-	public void track(long trackId, Location location, float azimuth, int accuracy, float pressure) {
-		Log.v(TAG, "Tracking (trackId=" + trackId + ") location: " + location + " azimuth: " + azimuth + ", accuracy: " + accuracy);
-		ContentValues values = new ContentValues();
-		values.put(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
-		values.put(TrackContentProvider.Schema.COL_LATITUDE, location.getLatitude());
-		values.put(TrackContentProvider.Schema.COL_LONGITUDE, location.getLongitude());
-		if (location.hasAltitude()) {
-			values.put(TrackContentProvider.Schema.COL_ELEVATION, location.getAltitude());
-		}
-		if (location.hasAccuracy()) {
-			values.put(TrackContentProvider.Schema.COL_ACCURACY, location.getAccuracy());
-		}
-		if (location.hasSpeed()) {
-			values.put(TrackContentProvider.Schema.COL_SPEED, location.getSpeed());
-		}
-		
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		if (prefs.getBoolean(OSMTracker.Preferences.KEY_GPS_IGNORE_CLOCK, OSMTracker.Preferences.VAL_GPS_IGNORE_CLOCK)) {
-			// Use OS clock
-			values.put(TrackContentProvider.Schema.COL_TIMESTAMP, System.currentTimeMillis());
-		} else {
-			// Use GPS clock
-			values.put(TrackContentProvider.Schema.COL_TIMESTAMP, location.getTime());
-		}
-
-		if (azimuth >= AZIMUTH_MIN && azimuth < AZIMUTH_MAX) {
-			values.put(TrackContentProvider.Schema.COL_COMPASS, azimuth);
-			values.put(TrackContentProvider.Schema.COL_COMPASS_ACCURACY, accuracy);
-		}
-
-		if (pressure != 0) {
-			values.put(TrackContentProvider.Schema.COL_ATMOSPHERIC_PRESSURE, pressure);
-		}
-
+	@SuppressWarnings({"unused", "RedundantSuppression"})
+	public static void setTrackName(long trackId, String name, ContentResolver cr) {
 		Uri trackUri = ContentUris.withAppendedId(TrackContentProvider.CONTENT_URI_TRACK, trackId);
-		contentResolver.insert(Uri.withAppendedPath(trackUri, TrackContentProvider.Schema.TBL_TRACKPOINT + "s"), values);
+		ContentValues values = new ContentValues();
+		values.put(TrackContentProvider.Schema.COL_NAME, name);
+		cr.update(trackUri, values, null, null);
 	}
 
 	/**
@@ -293,16 +257,30 @@ public class DataHelper {
 	}
 
 	/**
-	 * Change the name of this track.
-	 * @param trackId Id of the track
-	 * @param name  New name of track, or null to clear it
-	 * @param cr  Database connection for query
+	 * @param cr Content Resolver to use
+	 * @param trackId Track id
+	 * @return A File to the track directory for the target track id.
 	 */
-	public static void setTrackName(long trackId, String name, ContentResolver cr) {
-		Uri trackUri = ContentUris.withAppendedId(TrackContentProvider.CONTENT_URI_TRACK, trackId);
-		ContentValues values = new ContentValues();
-		values.put(TrackContentProvider.Schema.COL_NAME, name);
-		cr.update(trackUri, values, null, null);		
+	@SuppressWarnings({"unused", "RedundantSuppression"})
+	public static File getTrackDirFromDB(ContentResolver cr, long trackId) {
+		File trackDir = null;
+		Cursor c = cr.query(
+			ContentUris.withAppendedId(TrackContentProvider.CONTENT_URI_TRACK, trackId),
+			null, null, null, null);
+
+		if (c != null && c.getCount() != 0) {
+			c.moveToFirst();
+			@SuppressWarnings("deprecation")
+			String trackPath = c.getString(c.getColumnIndex(TrackContentProvider.Schema.COL_DIR));
+			if (trackPath != null) {
+				trackDir = new File(trackPath);
+			}
+		}
+		if (c != null && !c.isClosed()) {
+			c.close();
+		}
+
+		return trackDir;
 	}
 
 	/**
@@ -325,81 +303,21 @@ public class DataHelper {
 	}
 
 	/**
-	 * Renames a file inside track directory, keeping the extension
-	 * 
-	 * @param from
-	 *				File to rename (Ex: "abc.png")
-	 * @param to
-	 *				Filename to use for new name (Ex: "def")
-	 * @return Renamed filename (Ex: "def.png")
-	 */
-	private String renameFile(Long trackId, String from, String to) {
-		// If all goes terribly wrong and we can't rename the file,
-		// we will return the original file name we were given
-		String _return = from;
-		
-		File trackDir = getTrackDirectory(trackId);
-		
-		String ext = from.substring(from.lastIndexOf(".") + 1, from.length());
-		File origin = new File(trackDir + File.separator + from);
-		
-		// No point in trying to rename the file unless it exist
-		if (origin.exists()) {
-			File target = new File(trackDir + File.separator + to + "." + ext);
-			// Check & manages if there is already a file with this name
-			for (int i = 0; i < MAX_RENAME_ATTEMPTS && target.exists(); i++) {
-				target = new File(trackDir + File.separator + to + i + "." + ext);
-			}
-		
-			origin.renameTo(target);
-			_return = target.getName(); 
-		}
-		
-		return _return;
-	}
-
-	/**
-	 * @param cr Content Resolver to use
-	 * @param trackId Track id
-	 * @return A File to the track directory for the target track id.
-	 */
-	public static File getTrackDirFromDB(ContentResolver cr, long trackId) {
-		File trackDir = null;
-		Cursor c = cr.query(
-			ContentUris.withAppendedId(TrackContentProvider.CONTENT_URI_TRACK, trackId),
-			null, null, null, null);
-	
-		if (c != null && c.getCount() != 0) {
-			c.moveToFirst();
-			@SuppressWarnings("deprecation")
-			String trackPath = c.getString(c.getColumnIndex(TrackContentProvider.Schema.COL_DIR));
-			if (trackPath != null) {
-				trackDir = new File(trackPath);
-			}
-		}
-		if (c != null && !c.isClosed()) {
-			c.close();
-			c = null;
-		}
-		
-		return trackDir;
-	}
-	
-	/**
-	 * Generate a string of the directory path to external storage for the track id provided 
+	 * Generate a string of the directory path to external storage for the track id provided
 	 * @param trackId Track id
 	 * @return A the path where this track should store its files
 	 */
 	public static File getTrackDirectory(long trackId) {
-		File _return = null;
-		
-		String trackStorageDirectory = Environment.getExternalStorageDirectory()  
+		File _return;
+
+		String trackStorageDirectory = Environment.getExternalStorageDirectory()
 		+ "/osmtracker/data/files/track" + trackId;
-		
-		_return = new File(trackStorageDirectory);		
+
+		_return = new File(trackStorageDirectory);
 		return _return;
 	}
 
+	@SuppressWarnings({"unused", "RedundantSuppression"})
 	public static File getGPXTrackFile(long trackId, ContentResolver contentResolver, Context context) {
 
 		String trackName = getTrackNameInDB(trackId, contentResolver);
@@ -418,6 +336,95 @@ public class DataHelper {
 
 		return new File(completeGPXTrackPath);
 	}
+	
+	/**
+	 * Track a point into DB.
+	 *
+	 * @param trackId
+	 *            Id of the track
+	 * @param location
+	 *            The Location to track
+	 * @param azimuth
+	 * 			  azimuth angle in degrees (0-360deg) of the track point. if it is outside the given range it will be set null.
+	 * @param accuracy
+	 * 			  accuracy of the compass reading (as SensorManager.SENSOR_STATUS_ACCURACY*),
+	 * 			  ignored if azimuth is invalid.
+	 * @param pressure
+	 *            atmospheric pressure
+	 */
+	public void track(long trackId, Location location, float azimuth, int accuracy, float pressure) {
+		Log.v(TAG, "Tracking (trackId=" + trackId + ") location: " + location + " azimuth: " + azimuth + ", accuracy: " + accuracy);
+		ContentValues values = new ContentValues();
+		values.put(TrackContentProvider.Schema.COL_TRACK_ID, trackId);
+		values.put(TrackContentProvider.Schema.COL_LATITUDE, location.getLatitude());
+		values.put(TrackContentProvider.Schema.COL_LONGITUDE, location.getLongitude());
+		if (location.hasAltitude()) {
+            values.put(TrackContentProvider.Schema.COL_ELEVATION, location.getAltitude());
+        }
+        if (location.hasAccuracy()) {
+            values.put(TrackContentProvider.Schema.COL_ACCURACY, location.getAccuracy());
+        }
+        if (location.hasSpeed()) {
+            values.put(TrackContentProvider.Schema.COL_SPEED, location.getSpeed());
+        }
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        long timeStamp = System.currentTimeMillis();
+		if (!prefs.getBoolean(OSMTracker.Preferences.KEY_GPS_IGNORE_CLOCK, OSMTracker.Preferences.VAL_GPS_IGNORE_CLOCK)) {
+            // Use GPS clock
+            timeStamp = location.getTime();
+		}  // Use OS clock
+
+		values.put(TrackContentProvider.Schema.COL_TIMESTAMP, timeStamp);
+		DeviceON.Companion.setTrackPointTimeStamp(timeStamp);
+
+        if (azimuth >= AZIMUTH_MIN && azimuth < AZIMUTH_MAX) {
+            values.put(TrackContentProvider.Schema.COL_COMPASS, azimuth);
+            values.put(TrackContentProvider.Schema.COL_COMPASS_ACCURACY, accuracy);
+        }
+
+        if (pressure != 0) {
+            values.put(TrackContentProvider.Schema.COL_ATMOSPHERIC_PRESSURE, pressure);
+        }
+
+		Uri trackUri = ContentUris.withAppendedId(TrackContentProvider.CONTENT_URI_TRACK, trackId);
+		contentResolver.insert(Uri.withAppendedPath(trackUri, TrackContentProvider.Schema.TBL_TRACKPOINT + "s"), values);
+	}
+
+	/**
+	 * Renames a file inside track directory, keeping the extension
+	 *
+	 * @param from
+	 *				File to rename (Ex: "abc.png")
+	 * @param to
+	 *				Filename to use for new name (Ex: "def")
+	 * @return Renamed filename (Ex: "def.png")
+	 */
+	private String renameFile(Long trackId, String from, String to) {
+		// If all goes terribly wrong and we can't rename the file,
+		// we will return the original file name we were given
+		String _return = from;
+
+		File trackDir = getTrackDirectory(trackId);
+
+		String ext = from.substring(from.lastIndexOf(".") + 1);
+		File origin = new File(trackDir + File.separator + from);
+
+		// No point in trying to rename the file unless it exist
+		if (origin.exists()) {
+			File target = new File(trackDir + File.separator + to + "." + ext);
+			// Check & manages if there is already a file with this name
+			for (int i = 0; i < MAX_RENAME_ATTEMPTS && target.exists(); i++) {
+				target = new File(trackDir + File.separator + to + i + "." + ext);
+			}
+
+			//noinspection ResultOfMethodCallIgnored
+			origin.renameTo(target);
+			_return = target.getName();
+		}
+
+		return _return;
+	}
 
 	public static String getTrackNameInDB(long trackId, ContentResolver contentResolver) {
 		String trackName = "";
@@ -434,8 +441,8 @@ public class DataHelper {
 
 	/**
 	 *
-	 * @param startDate
-	 * @return
+	 * @param startDate 1
+	 * @return 1
 	 */
 	public Track getTrackByStartDate(Date startDate) {
 		// Get the name of the track with the received start date
@@ -470,7 +477,7 @@ public class DataHelper {
 	}
 
 	public List<Integer> getWayPointIdsOfTrack(long trackId) {
-		List<Integer> out = new ArrayList<Integer>();
+		List<Integer> out = new ArrayList<>();
 		// constant for the column track Id
 		String[] mProjection = { TrackContentProvider.Schema.COL_ID };
 
@@ -491,7 +498,7 @@ public class DataHelper {
 	}
 
 	public WayPoint getWayPointById(Integer wayPointId) {
-		WayPoint wpt = null;
+		WayPoint wpt;
 
 		Cursor cWayPoint = contentResolver.query(
 				TrackContentProvider.waypointUri(wayPointId),
@@ -505,7 +512,7 @@ public class DataHelper {
 	}
 
 	public List<Integer> getTrackPointIdsOfTrack(long trackId) {
-		List<Integer> out = new ArrayList<Integer>();
+		List<Integer> out = new ArrayList<>();
 		// constant for the column track Id
 		String[] mProjection = { TrackContentProvider.Schema.COL_ID };
 
@@ -525,7 +532,7 @@ public class DataHelper {
 	}
 
 	public TrackPoint getTrackPointById(Integer trackPointId) {
-		TrackPoint trkpt = null;
+		TrackPoint trkpt;
 
 		Cursor cTrackPoint = contentResolver.query(
 				TrackContentProvider.trackpointUri(trackPointId),

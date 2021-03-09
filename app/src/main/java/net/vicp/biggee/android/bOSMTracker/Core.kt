@@ -12,7 +12,6 @@ import androidx.core.util.forEach
 import androidx.core.util.isEmpty
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
-import androidx.room.Room
 import com.sun.mail.smtp.SMTPTransport
 import net.osmtracker.db.TrackContentProvider
 import net.vicp.biggee.android.bOSMTracker.db.DataCenter
@@ -220,13 +219,13 @@ object Core {
     }
 
     fun readSetting(applicationContext: Context): Array<Setting> {
-        val db = Room.databaseBuilder(applicationContext, DataCenter::class.java, "bOSMTrack").build()
+        val db = DataCenter.getDB(applicationContext)
         val setting = db.dao().getSetting()
         return setting.toTypedArray()
     }
 
     fun saveSetting(applicationContext: Context, setting: Setting, deadLine: Long = Long.MIN_VALUE) {
-        val db = Room.databaseBuilder(applicationContext, DataCenter::class.java, "bOSMTrack").build()
+        val db = DataCenter.getDB(applicationContext)
         if (deadLine > 0) {
             db.dao().clearSetting(deadLine)
         }
@@ -234,7 +233,7 @@ object Core {
     }
 
     fun readSettingHistory(applicationContext: Context, dateBefore: Long): Array<Setting> {
-        val db = Room.databaseBuilder(applicationContext, DataCenter::class.java, "bOSMTrack").build()
+        val db = DataCenter.getDB(applicationContext)
         val setting = db.dao().getSettingHistory(dateBefore)
         return setting.toTypedArray()
     }
@@ -272,7 +271,7 @@ object Core {
         val dataCols = mapOf(Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "记录时间"),
                 Pair(TrackContentProvider.Schema.COL_LONGITUDE, "经度"),
                 Pair(TrackContentProvider.Schema.COL_LATITUDE, "纬度"))
-        var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
+        var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",") + ",屏幕状态"
         csv.appendText("$head\n", Charset.forName("GB18030"))
 
         //获取任务记录
@@ -293,6 +292,7 @@ object Core {
                 dataCols.keys.iterator().forEach { colName ->
                     data.append(",${row[colName]}")
                 }
+                data.append(",${DataCenter.getDB(applicationContext).dao().getDeviceON(row[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: -1)?.intentAction ?: "UNKNOWN"}")
                 val line = "${cnt++},$data\n"
                 val lat = row[TrackContentProvider.Schema.COL_LATITUDE]?.toDoubleOrNull()
                         ?: return@row
@@ -349,5 +349,14 @@ object Core {
 
         fun testInRange(latitude: Double, longitude: Double) = abs(latitude.minus(this.latitude).times(metersPerLatitude)) < range
                 && abs(longitude.minus(this.longitude).times(metersPerLongitude)) < range
+    }
+
+    @Suppress("USELESS_ELVIS", "unused")
+    object TestSuit {
+        fun testDeviceON(applicationContext: Context) {
+            val db = DataCenter.getDB(applicationContext).dao()
+            Log.e("testDeviceON", "1===" + db.getDeviceON(0))
+            Log.e("testDeviceON", "2===" + db.getDeviceON(-1) ?: "non")
+        }
     }
 }

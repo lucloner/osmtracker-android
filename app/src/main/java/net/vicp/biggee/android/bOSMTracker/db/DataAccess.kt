@@ -17,4 +17,10 @@ interface DataAccess {
 
     @Query("SELECT * FROM setting WHERE sentDate<:dateBefore ORDER BY timeStamp DESC LIMIT :size")
     fun getSettingHistory(dateBefore: Long, size: Int = 3): List<Setting>
+
+    @Insert
+    fun addDeviceON(deviceON: DeviceON)
+
+    @Query("SELECT * FROM deviceON WHERE :trackPointTimeStamp BETWEEN point_timestamp AND timeStamp ORDER BY timeStamp LIMIT 1")
+    fun getDeviceON(trackPointTimeStamp: Long): DeviceON?
 }

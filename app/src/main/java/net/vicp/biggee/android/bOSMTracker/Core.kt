@@ -180,6 +180,9 @@ object Core {
                 }
                 val date = row[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: continue
                 if (dateRange.contains(date)) {
+                    val intentAction = DataCenter.getDB(context).dao().getDeviceON(date)?.intentAction
+                            ?: ""
+                    row["intentAction"] = intentAction
                     row[TrackContentProvider.Schema.COL_TIMESTAMP] = dateFormat.format(date)
                     data.put(id, row)
                 } else if (dateRange.last < date) {
@@ -270,8 +273,9 @@ object Core {
 
         val dataCols = mapOf(Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "记录时间"),
                 Pair(TrackContentProvider.Schema.COL_LONGITUDE, "经度"),
-                Pair(TrackContentProvider.Schema.COL_LATITUDE, "纬度"))
-        var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",") + ",屏幕状态"
+                Pair(TrackContentProvider.Schema.COL_LATITUDE, "纬度"),
+                Pair("intentAction", "屏幕状态"))
+        var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
         csv.appendText("$head\n", Charset.forName("GB18030"))
 
         //获取任务记录
@@ -280,8 +284,10 @@ object Core {
         readTracker.keyIterator().forEach {
             val trackerPoints = readTrackerPoint(applicationContext, it)
 
-            var chkRange = AreaRang(0.0, 0.0, -1.0)
+            val chkRangeStub = AreaRang(0.0, 0.0, -1.0)
+            var chkRange = chkRangeStub
             var lastLine = ""
+            var lastAction = ""
 
             //组装html
             html.append(printTable(trackerPoints))
@@ -292,8 +298,22 @@ object Core {
                 dataCols.keys.iterator().forEach { colName ->
                     data.append(",${row[colName]}")
                 }
-                data.append(",${DataCenter.getDB(applicationContext).dao().getDeviceON(row[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: -1)?.intentAction ?: "UNKNOWN"}")
+
+                //处理屏幕开关
+                val intentAction = row["intentAction"] ?: ""
+                if (intentAction.isNotBlank()) {
+                    //屏幕变化
+                    if (lastAction != intentAction) {
+                        chkRange = chkRangeStub
+                    }
+                    lastAction = intentAction
+
+                } else {
+                    data.append(lastAction)
+                }
+
                 val line = "${cnt++},$data\n"
+                //处理距离
                 val lat = row[TrackContentProvider.Schema.COL_LATITUDE]?.toDoubleOrNull()
                         ?: return@row
                 val lon = row[TrackContentProvider.Schema.COL_LONGITUDE]?.toDoubleOrNull()

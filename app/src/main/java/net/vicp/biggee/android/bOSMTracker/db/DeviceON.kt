@@ -5,25 +5,19 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import java.util.concurrent.Executors
+import kotlin.math.max
 
 @Entity
 data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis(),
                     var intentAction: String = "",
                     var point_timestamp: Long = 0) : BroadcastReceiver() {
 
-    @Transient
-    @Ignore
-    @JvmSynthetic
-    var now = 0L
     override fun onReceive(context: Context?, intent: Intent?) {
-        now++
-        if (now < System.currentTimeMillis()) {
-            now = System.currentTimeMillis()
+        synchronized(timeStamp) {
+            timeStamp = max(++timeStamp, System.currentTimeMillis())
         }
-        timeStamp = now
         intentAction = "${intent?.action?.split(".")?.last()}"
         point_timestamp = trackPointTimeStamp
 
@@ -34,10 +28,10 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
                 DataCenter.getDB(context ?: return@execute)
                         .dao().addDeviceON(this)
             } catch (_: Exception) {
+                timeStamp++
             }
         }
     }
-
 
     companion object {
         @Volatile

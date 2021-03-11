@@ -192,15 +192,15 @@ object Core {
                         gsm = this.gsmCell
                     }
                     row["intentAction"] = intentAction
-                    row["wifiName"] = intentAction
-                    row["gsmCell"] = intentAction
+                    row["wifiName"] = wifi
+                    row["gsmCell"] = gsm
                     row[TrackContentProvider.Schema.COL_TIMESTAMP] = dateFormat.format(date)
                     data.put(id, row)
                 } else if (dateRange.last < date) {
                     break
                 }
             }
-            return data
+            return mergeTrackerPointAndInDoorLocation(data, readInDoorLocation(context, trackerId))
         } catch (e: Exception) {
             e.printStackTrace()
             data.append(Long.MAX_VALUE, HashMap<String, String>().apply {
@@ -210,12 +210,12 @@ object Core {
             cursor?.close()
             cursor = null
         }
-        return mergeTrackerPointAndInDoorLocation(data, readInDoorLocation(context, trackerId, dateRange))
+        return mergeTrackerPointAndInDoorLocation(data, readInDoorLocation(context, trackerId))
     }
 
-    private fun readInDoorLocation(applicationContext: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
+    private fun readInDoorLocation(applicationContext: Context, trackerId: Long = 1): LongSparseArray<Map<String, String>> {
         val data = LongSparseArray<Map<String, String>>()
-        DataCenter.getDB(applicationContext).dao().getInDoorDeviceON(trackerId, dateRange.first, dateRange.last).parallelStream().forEach {
+        DataCenter.getDB(applicationContext).dao().getInDoorDeviceON(trackerId).parallelStream().forEach {
             data.put(it.point_timestamp, it.toMap())
         }
 

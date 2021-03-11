@@ -9,7 +9,10 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.net.wifi.WifiManager
+import android.telephony.CellInfo
+import android.telephony.CellInfoLte
 import android.telephony.TelephonyManager
+import android.telephony.TelephonyManager.CellInfoCallback
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -62,8 +65,18 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
         if (context != null && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             //获得基站资料
             (context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager?)?.apply {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    requestCellInfoUpdate(executors
+                            ?: Executors.newWorkStealingPool(), object : CellInfoCallback() {
+                        override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
+                            cellInfo.filterIsInstance<CellInfoLte>().minByOrNull { it.cellSignalStrength.dbm }?.cellIdentity?.apply {
+                                gsmCell = "$pci,$tac,$ci"
+                                Log.d(this::class.simpleName, "gsmCell:$gsmCell")
+                            }
+                        }
+                    })
+                }
                 gsmOperate = networkOperator
-                gsmCell = allCellInfo.joinToString(",")
             }
         }
 
@@ -141,8 +154,6 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
                 Toast.makeText(this, "记录WIFI信息$wifiName", Toast.LENGTH_SHORT).show()
             }
         }
-
-        Log.d(this::class.simpleName, "LocationManager:$location")
     }
 
     companion object {

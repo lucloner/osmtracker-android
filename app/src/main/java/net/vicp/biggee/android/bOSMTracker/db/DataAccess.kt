@@ -28,6 +28,6 @@ interface DataAccess {
     @Query("DELETE FROM DeviceON WHERE point_timestamp=:trackPointTimeStamp")
     fun delDeviceON(trackPointTimeStamp: Long = 0): Int
 
-    @Query("SELECT * FROM DeviceON WHERE inDoorLocation=:trackId AND point_timestamp BETWEEN :dateAfter AND :dateBefore ORDER BY timeStamp")
-    fun getInDoorDeviceON(trackId: Long = 1, dateAfter: Long, dateBefore: Long): List<DeviceON>
+    @Query("SELECT * FROM DeviceON WHERE inDoorLocation=:trackId ORDER BY timeStamp")
+    fun getInDoorDeviceON(trackId: Long = 1): List<DeviceON>
 }

@@ -17,6 +17,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.coroutines.Runnable
 import net.osmtracker.activity.TrackLogger
+import net.osmtracker.db.TrackContentProvider
 import pub.devrel.easypermissions.EasyPermissions
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -53,6 +54,7 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
             return
         }
 
+        gsmLocation = ""
         saveToDB(context)
     }
 
@@ -85,6 +87,28 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
         }
     }
 
+    fun toMap(): Map<String, String> {
+        val map = mutableMapOf(
+                Pair("timeStamp", "$timeStamp"),
+                Pair("intentAction", intentAction),
+                Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "$point_timestamp"),
+                Pair("wifiName", wifiName),
+                Pair("gsmOperate", gsmOperate),
+                Pair("gsmCell", gsmCell),
+                Pair("gsmLocation", gsmLocation),
+                Pair("inDoorLocation", "$inDoorLocation"),
+                Pair(TrackContentProvider.Schema.COL_TRACK_ID, "$inDoorLocation"),
+                Pair(TrackContentProvider.Schema.COL_LATITUDE, "0.0"),
+                Pair(TrackContentProvider.Schema.COL_LONGITUDE, "0.0")
+        )
+        val coordinate = gsmLocation.split(",")
+        if (coordinate.size > 1) {
+            map[TrackContentProvider.Schema.COL_LATITUDE] = "" + coordinate[0]
+            map[TrackContentProvider.Schema.COL_LONGITUDE] = "" + coordinate[1]
+        }
+        return map
+    }
+
     override fun run() {
         if (currentGpsActivity?.gpsLogger?.currentTrackId ?: -2 < 0) {
             executors?.shutdown()
@@ -105,10 +129,10 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
             }
             inDoorLocation = currentTrackId
 
-            gsmLocation = "${location?.latitude} ${location?.longitude}"
+            gsmLocation = "${location?.latitude},${location?.longitude}"
 
             synchronized(timeStamp) {
-                timeStamp = max(++timeStamp, System.currentTimeMillis())
+                timeStamp = max(++timeStamp, point_timestamp + 1)
             }
 
             saveToDB(currentGpsActivity)

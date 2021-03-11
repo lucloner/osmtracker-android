@@ -2,17 +2,13 @@
 
 package net.vicp.biggee.android.bOSMTracker
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.ContextWrapper
 import android.database.Cursor
 import android.icu.text.SimpleDateFormat
 import android.util.Log
 import android.util.LongSparseArray
-import androidx.core.util.forEach
-import androidx.core.util.isEmpty
-import androidx.core.util.keyIterator
-import androidx.core.util.valueIterator
+import androidx.core.util.*
 import com.sun.mail.smtp.SMTPTransport
 import net.osmtracker.db.TrackContentProvider
 import net.vicp.biggee.android.bOSMTracker.db.DataCenter
@@ -34,6 +30,7 @@ import javax.mail.internet.MimeBodyPart
 import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
+import kotlin.Pair
 import kotlin.collections.HashMap
 import kotlin.collections.set
 import kotlin.math.PI
@@ -123,7 +120,6 @@ object Core {
         return true
     }
 
-    @SuppressLint("Recycle")
     fun readTracker(context: Context, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE), limit: Long = Long.MAX_VALUE): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val idCol = 0
@@ -164,7 +160,6 @@ object Core {
         return data
     }
 
-    @SuppressLint("Recycle")
     private fun readTrackerPoint(context: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val data = LongSparseArray<Map<String, String>>()
@@ -178,7 +173,7 @@ object Core {
             val readCols = cursor.columnNames
             while (cursor.moveToNext()) {
                 val row = LinkedHashMap<String, String>()
-                val id = cursor.getLong(0)
+                val id = cursor.getLong(cursor.getColumnIndex(TrackContentProvider.Schema.COL_TIMESTAMP))
                 for (index in 1 until cursor.columnCount) {
                     if (importantCols.contains(readCols[index])) {
                         row[readCols[index]] = cursor.getDouble(index).toString()
@@ -188,9 +183,17 @@ object Core {
                 }
                 val date = row[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: continue
                 if (dateRange.contains(date)) {
-                    val intentAction = DataCenter.getDB(context).dao().getDeviceON(date)?.intentAction
-                            ?: ""
+                    var intentAction = ""
+                    var wifi = ""
+                    var gsm = ""
+                    DataCenter.getDB(context).dao().getDeviceON(date)?.apply {
+                        intentAction = this.intentAction
+                        wifi = this.wifiName
+                        gsm = this.gsmCell
+                    }
                     row["intentAction"] = intentAction
+                    row["wifiName"] = intentAction
+                    row["gsmCell"] = intentAction
                     row[TrackContentProvider.Schema.COL_TIMESTAMP] = dateFormat.format(date)
                     data.put(id, row)
                 } else if (dateRange.last < date) {
@@ -207,7 +210,25 @@ object Core {
             cursor?.close()
             cursor = null
         }
+        return mergeTrackerPointAndInDoorLocation(data, readInDoorLocation(context, trackerId, dateRange))
+    }
+
+    private fun readInDoorLocation(applicationContext: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
+        val data = LongSparseArray<Map<String, String>>()
+        DataCenter.getDB(applicationContext).dao().getInDoorDeviceON(trackerId, dateRange.first, dateRange.last).parallelStream().forEach {
+            data.put(it.point_timestamp, it.toMap())
+        }
+
         return data
+    }
+
+    private fun mergeTrackerPointAndInDoorLocation(readTrackerPoint: LongSparseArray<Map<String, String>>, readInDoorLocation: LongSparseArray<Map<String, String>>): LongSparseArray<Map<String, String>> {
+        readInDoorLocation.forEach { pointTimestamp, map ->
+            if (!readTrackerPoint.containsKey(pointTimestamp)) {
+                readTrackerPoint.put(pointTimestamp, map)
+            }
+        }
+        return readTrackerPoint
     }
 
     private fun printTable(data: LongSparseArray<Map<String, String>>, table: String = "<table border=\"1\"><tr><td>", tr: String = "</td></tr><tr><td>", td: String = "</td><td>", closeTable: String = "</td></tr></table>"): String {
@@ -284,7 +305,9 @@ object Core {
         val dataCols = mapOf(Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "记录时间"),
                 Pair(TrackContentProvider.Schema.COL_LONGITUDE, "经度"),
                 Pair(TrackContentProvider.Schema.COL_LATITUDE, "纬度"),
-                Pair("intentAction", "屏幕状态"))
+                Pair("intentAction", "屏幕状态"),
+                Pair("wifiName", "WIFI名称"),
+                Pair("gsmCell", "基站信息"))
         var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
         csv.appendText("$head\n", Charset.forName("GB18030"))
 
@@ -298,6 +321,7 @@ object Core {
             var chkRange = chkRangeStub
             var lastLine = ""
             var lastAction = ""
+            var lastWIFI = ""
 
             //组装html
             html.append(printTable(trackerPoints))
@@ -311,13 +335,14 @@ object Core {
 
                 //处理屏幕开关
                 val intentAction = row["intentAction"] ?: ""
-                if (intentAction.isNotBlank()) {
+                val wifi = row["wifiName"] ?: ""
+                if (intentAction.isNotBlank() || wifi.isNotBlank()) {
                     //屏幕变化
-                    if (lastAction != intentAction) {
+                    if (lastAction != intentAction || lastWIFI != wifi) {
                         chkRange = chkRangeStub
                     }
                     lastAction = intentAction
-
+                    lastWIFI = wifi
                 } else {
                     data.append(lastAction)
                 }

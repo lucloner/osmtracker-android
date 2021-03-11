@@ -70,7 +70,7 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
                             ?: Executors.newWorkStealingPool(), object : CellInfoCallback() {
                         override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
                             cellInfo.filterIsInstance<CellInfoLte>().minByOrNull { it.cellSignalStrength.dbm }?.cellIdentity?.apply {
-                                gsmCell = "$pci,$tac,$ci"
+                                gsmCell = "$pci:$tac:$ci"
                                 Log.d(this::class.simpleName, "gsmCell:$gsmCell")
                             }
                         }
@@ -87,7 +87,7 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
                     ipAddress shr 8 and 0xff,
                     ipAddress shr 16 and 0xff,
                     ipAddress shr 24 and 0xff)
-            wifiName = "$ssid($bssid)$ipStr"
+            wifiName = "$ssid($bssid)$ipStr".replace("\n", "")
         }
 
         Executors.newWorkStealingPool().execute {
@@ -100,21 +100,29 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
         }
     }
 
-    fun toMap(): Map<String, String> {
+    fun toMap(): MutableMap<String, String> {
         val map = mutableMapOf(
-                Pair("timeStamp", "$timeStamp"),
-                Pair("intentAction", intentAction),
-                Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "$point_timestamp"),
-                Pair("wifiName", wifiName),
-                Pair("gsmOperate", gsmOperate),
-                Pair("gsmCell", gsmCell),
-                Pair("gsmLocation", gsmLocation),
-                Pair("inDoorLocation", "$inDoorLocation"),
+
                 Pair(TrackContentProvider.Schema.COL_TRACK_ID, "$inDoorLocation"),
                 Pair(TrackContentProvider.Schema.COL_LATITUDE, "0.0"),
-                Pair(TrackContentProvider.Schema.COL_LONGITUDE, "0.0")
+                Pair(TrackContentProvider.Schema.COL_LONGITUDE, "0.0"),
+                Pair(TrackContentProvider.Schema.COL_NAME, "室内主动定位"),
+                Pair(TrackContentProvider.Schema.COL_SPEED, "0"),
+                Pair(TrackContentProvider.Schema.COL_ELEVATION, "0"),
+                Pair(TrackContentProvider.Schema.COL_ACCURACY, "0"),
+                Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "$point_timestamp"),
+                Pair(TrackContentProvider.Schema.COL_COMPASS, "0"),
+                Pair(TrackContentProvider.Schema.COL_COMPASS_ACCURACY, "0"),
+                Pair(TrackContentProvider.Schema.COL_ATMOSPHERIC_PRESSURE, "0"),
+                Pair("intentAction", intentAction),
+                Pair("wifiName", wifiName),
+                Pair("gsmCell", gsmCell),
+                Pair("gsmOperate", gsmOperate),
+                Pair("timeStamp", "$timeStamp"),
+                Pair("gsmLocation", gsmLocation),
+                Pair("inDoorLocation", "$inDoorLocation")
         )
-        val coordinate = gsmLocation.split(",")
+        val coordinate = gsmLocation.split(":")
         if (coordinate.size > 1) {
             map[TrackContentProvider.Schema.COL_LATITUDE] = "" + coordinate[0]
             map[TrackContentProvider.Schema.COL_LONGITUDE] = "" + coordinate[1]
@@ -142,7 +150,7 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
             }
             inDoorLocation = currentTrackId
 
-            gsmLocation = "${location?.latitude},${location?.longitude}"
+            gsmLocation = "${location?.latitude}:${location?.longitude}"
 
             synchronized(timeStamp) {
                 timeStamp = max(++timeStamp, point_timestamp + 1)

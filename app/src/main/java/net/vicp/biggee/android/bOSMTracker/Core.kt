@@ -2,6 +2,7 @@
 
 package net.vicp.biggee.android.bOSMTracker
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.ContextWrapper
 import android.database.Cursor
@@ -120,6 +121,7 @@ object Core {
         return true
     }
 
+    @SuppressLint("Recycle")
     fun readTracker(context: Context, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE), limit: Long = Long.MAX_VALUE): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val idCol = 0
@@ -139,6 +141,7 @@ object Core {
                 readCols.iterator().forEach {
                     row[it] = "" + cursor?.getString(cursor?.getColumnIndex(it) ?: return@forEach)
                 }
+
                 val date = row[TrackContentProvider.Schema.COL_START_DATE]?.toLong() ?: continue
                 if (dateRange.contains(date)) {
                     row[TrackContentProvider.Schema.COL_START_DATE] = dateFormat.format(date)
@@ -160,6 +163,7 @@ object Core {
         return data
     }
 
+    @SuppressLint("Recycle")
     private fun readTrackerPoint(context: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val data = LongSparseArray<Map<String, String>>()
@@ -208,7 +212,6 @@ object Core {
             })
         } finally {
             cursor?.close()
-            cursor = null
         }
         return mergeTrackerPointAndInDoorLocation(data, readInDoorLocation(context, trackerId))
     }
@@ -216,7 +219,10 @@ object Core {
     private fun readInDoorLocation(applicationContext: Context, trackerId: Long = 1): LongSparseArray<Map<String, String>> {
         val data = LongSparseArray<Map<String, String>>()
         DataCenter.getDB(applicationContext).dao().getInDoorDeviceON(trackerId).parallelStream().forEach {
-            data.put(it.point_timestamp, it.toMap())
+            val map = it.toMap()
+            data.put(it.point_timestamp, map)
+            val date = map[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: return@forEach
+            map[TrackContentProvider.Schema.COL_TIMESTAMP] = dateFormat.format(date)
         }
 
         return data

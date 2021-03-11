@@ -38,18 +38,14 @@ import kotlin.collections.LinkedHashSet
 @Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
 
+    lateinit var receiver: DeviceON
+
     @SuppressLint("HardwareIds", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        registerReceiver(DeviceON(), IntentFilter().apply {
-            addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
-            addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_USER_PRESENT)
-            addAction(Intent.ACTION_USER_UNLOCKED)
-        })
+        DeviceON.queryPermissions(this)
 
         //runTestSuit
         Executors.newWorkStealingPool().execute {
@@ -61,9 +57,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         var imei = "没有获取到IMEI"
-        if (!EasyPermissions.hasPermissions(this, Manifest.permission.READ_PHONE_STATE)) {
-            EasyPermissions.requestPermissions(this, "尝试获取IMEI", 1, Manifest.permission.READ_PHONE_STATE)
-        }
+
+        receiver = DeviceON()
+        registerReceiver(receiver, IntentFilter().apply {
+            addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+            addAction(Intent.ACTION_USER_UNLOCKED)
+        })
 
         try {
             val tm = baseContext.getSystemService(Service.TELEPHONY_SERVICE) as TelephonyManager
@@ -249,6 +251,8 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this@MainActivity, TrackManager::class.java).apply {
                 putExtra("OneKeyStart", true)
             })
+
+            DeviceON.doMonitor(receiver)
         }
 
         //查询本月上传情况
@@ -265,17 +269,17 @@ class MainActivity : AppCompatActivity() {
                 return@execute
             }
             val lastSent = setting.sentDate
-            val d = Date(lastSent)
-            if (firstOfMonth.month == d.month + 1 && firstOfMonth.year == d.month) {
-                return@execute
-            } else if (firstOfMonth.year == d.month + 1 && d.month == 12 && firstOfMonth.month == 1) {
+            val d = Date(lastSent).apply { month++ }
+            if (firstOfMonth.month == d.month && firstOfMonth.year == d.month) {
                 return@execute
             }
             imei = setting.imei
             val email = setting.email
             //获取月份
             val months = HashSet<Date>()
+            d.month--
             val dateFrom = Core.FormattedDate(d.year, d.month)
+
             while (dateFrom < firstOfMonth) {
                 months.add(dateFrom)
                 dateFrom.month++
@@ -288,9 +292,10 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this@MainActivity, "没有待发送的邮件", Toast.LENGTH_LONG).show()
                     return@runOnUiThread
                 }
+//                Log.d(this::class.simpleName,"$firstOfMonth $lastSent $d $readTracker")
                 AlertDialog.Builder(this@MainActivity)
                         .setTitle("上月未传")
-                        .setMessage("上个月数据还未上传,是否从${dateFrom}上传到$email($imei)?")
+                        .setMessage("上个月数据还未上传,是否从${Core.FormattedDate(d.year, d.month)}上传到$email($imei)?")
                         .setPositiveButton("上传") { _, _ ->
                             Executors.newWorkStealingPool().execute {
                                 val (html, csv) = Core.assembleMailMessage(applicationContext, months, imei)
@@ -313,6 +318,11 @@ class MainActivity : AppCompatActivity() {
                         .show()
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(receiver)
     }
 
     companion object {

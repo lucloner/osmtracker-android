@@ -54,6 +54,7 @@ import net.osmtracker.util.FileSystemUtils;
 import net.osmtracker.util.ThemeValidator;
 import net.osmtracker.view.TextNoteDialog;
 import net.osmtracker.view.VoiceRecDialog;
+import net.vicp.biggee.android.bOSMTracker.db.DeviceON;
 import net.vicp.biggee.android.osmtracker.R;
 
 import java.io.File;
@@ -114,7 +115,7 @@ public class TrackLogger extends Activity {
     /**
      * GPS Logger service, to receive events and be able to update UI.
      */
-    private GPSLogger gpsLogger;
+    public GPSLogger gpsLogger;
     /**
      * GPS Logger service intent, to be used in start/stopService();
      */
@@ -158,6 +159,7 @@ public class TrackLogger extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        DeviceON.Companion.setCurrentGpsActivity(this);
 
         // Get the track id to work with
         currentTrackId = getIntent().getExtras().getLong(TrackContentProvider.Schema.COL_TRACK_ID);

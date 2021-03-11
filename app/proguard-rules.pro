@@ -1,0 +1,5 @@
+-keep public class net.osmtracker.OSMTracker
+-keep class javax.* {*;}
+-keep class com.sun.* {*;}
+-keep class org.apache.harmony.* {*;}
+-keep class mail.* {*;}

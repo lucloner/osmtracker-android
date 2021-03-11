@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Setting::class, DeviceON::class], version = 2)
+@Database(entities = [Setting::class, DeviceON::class], version = 4)
 abstract class DataCenter : RoomDatabase() {
     abstract fun dao(): DataAccess
 
@@ -22,6 +22,20 @@ abstract class DataCenter : RoomDatabase() {
                                 intentAction TEXT NOT NULL  
                             )""")
                     }
-                }).build()
+                },
+                        object : Migration(2, 3) {
+                            override fun migrate(database: SupportSQLiteDatabase) {
+                                database.execSQL("ALTER TABLE DeviceON ADD COLUMN wifiName TEXT NOT NULL DEFAULT ''")
+                                database.execSQL("ALTER TABLE DeviceON ADD COLUMN gsmOperate TEXT NOT NULL DEFAULT ''")
+                                database.execSQL("ALTER TABLE DeviceON ADD COLUMN gsmCell TEXT NOT NULL DEFAULT ''")
+                                database.execSQL("ALTER TABLE DeviceON ADD COLUMN gsmLocation TEXT NOT NULL DEFAULT ''")
+                            }
+                        },
+                        object : Migration(3, 4) {
+                            override fun migrate(database: SupportSQLiteDatabase) {
+                                database.execSQL("ALTER TABLE DeviceON ADD COLUMN inDoorLocation INTEGER NOT NULL DEFAULT 0")
+                            }
+                        }
+                ).build()
     }
 }

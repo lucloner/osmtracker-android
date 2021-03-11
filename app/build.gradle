@@ -3,8 +3,14 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
-android {
+configurations {
+    all {
+        exclude module: 'httpclient'
+    }
+}
 
+
+android {
     useLibrary 'org.apache.http.legacy'
     compileSdkVersion 30
     buildToolsVersion = '31.0.0 rc1'
@@ -65,6 +71,11 @@ android {
             buildConfigField('String','smtpUser',"\"${smtpUser}\"")
             buildConfigField('String','smtpPass',"\"${smtpPass}\"")
             buildConfigField('String','defaultEmailTo',"\"${defaultEmailTo}\"")
+
+            shrinkResources true
+            proguardFiles getDefaultProguardFile(
+                    'proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
         }
         debug {
             jniDebuggable true

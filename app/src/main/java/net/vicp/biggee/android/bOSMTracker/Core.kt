@@ -2,6 +2,7 @@
 
 package net.vicp.biggee.android.bOSMTracker
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.ContextWrapper
 import android.database.Cursor
@@ -122,6 +123,7 @@ object Core {
         return true
     }
 
+    @SuppressLint("Recycle")
     fun readTracker(context: Context, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE), limit: Long = Long.MAX_VALUE): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val idCol = 0
@@ -134,11 +136,13 @@ object Core {
         try {
             cursor = contentResolver.query(
                     TrackContentProvider.CONTENT_URI_TRACK, null, null, null,
-                    TrackContentProvider.Schema.COL_START_DATE + " desc")
-            while (cursor!!.moveToNext()) {
+                    TrackContentProvider.Schema.COL_START_DATE + " desc") ?: return data
+            while (cursor.moveToNext()) {
                 val row = LinkedHashMap<String, String>()
                 val id = cursor.getLong(idCol)
-                readCols.iterator().forEach { row[it] = cursor.getString(cursor.getColumnIndex(it)) }
+                readCols.iterator().forEach {
+                    row[it] = "" + cursor?.getString(cursor?.getColumnIndex(it) ?: return@forEach)
+                }
                 val date = row[TrackContentProvider.Schema.COL_START_DATE]?.toLong() ?: continue
                 if (dateRange.contains(date)) {
                     row[TrackContentProvider.Schema.COL_START_DATE] = dateFormat.format(date)
@@ -149,15 +153,18 @@ object Core {
             }
             return data
         } catch (e: Exception) {
+            e.printStackTrace()
             data.append(Long.MAX_VALUE, HashMap<String, String>().apply {
-                put(readCols[0], "${e.message}")
+                put(readCols[0], "${e.message}${e.stackTraceToString()}")
             })
         } finally {
             cursor?.close()
+            cursor = null
         }
         return data
     }
 
+    @SuppressLint("Recycle")
     private fun readTrackerPoint(context: Context, trackerId: Long = 1, dateRange: LongRange = LongRange(Long.MIN_VALUE, Long.MAX_VALUE)): LongSparseArray<Map<String, String>> {
         val contentResolver = ContextWrapper(context).contentResolver
         val data = LongSparseArray<Map<String, String>>()
@@ -167,7 +174,8 @@ object Core {
             cursor = contentResolver.query(
                     TrackContentProvider.trackPointsUri(trackerId),
                     null, null, null, TrackContentProvider.Schema.COL_TIMESTAMP + " asc")
-            val readCols = cursor!!.columnNames
+                    ?: return data
+            val readCols = cursor.columnNames
             while (cursor.moveToNext()) {
                 val row = LinkedHashMap<String, String>()
                 val id = cursor.getLong(0)
@@ -191,11 +199,13 @@ object Core {
             }
             return data
         } catch (e: Exception) {
+            e.printStackTrace()
             data.append(Long.MAX_VALUE, HashMap<String, String>().apply {
-                put(TrackContentProvider.Schema.COL_TRACK_ID, "${e.message}")
+                put(TrackContentProvider.Schema.COL_TRACK_ID, "${e.message}${e.stackTraceToString()}")
             })
         } finally {
             cursor?.close()
+            cursor = null
         }
         return data
     }

@@ -84,6 +84,7 @@ android {
             signingConfig signingConfigs.key
             minifyEnabled false
             multiDexEnabled false
+            shrinkResources false
 
             buildConfigField('String','smtpServer',"\"${smtpServer}\"")
             buildConfigField('String','smtpUser',"\"${smtpUser}\"")

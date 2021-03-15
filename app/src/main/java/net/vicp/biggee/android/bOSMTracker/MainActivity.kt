@@ -28,6 +28,7 @@ import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.BuildConfig
 import net.vicp.biggee.android.osmtracker.R
 import pub.devrel.easypermissions.EasyPermissions
+import java.io.File
 import java.io.InputStreamReader
 import java.util.*
 import java.util.concurrent.Executors
@@ -36,7 +37,7 @@ import kotlin.collections.LinkedHashSet
 
 
 @Suppress("DEPRECATION")
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), Thread.UncaughtExceptionHandler {
 
     lateinit var receiver: DeviceON
 
@@ -44,6 +45,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        Thread.setDefaultUncaughtExceptionHandler(this)
 
         DeviceON.queryPermissions(this)
 
@@ -189,14 +192,7 @@ class MainActivity : AppCompatActivity() {
                         Executors.newWorkStealingPool().execute {
                             val d = Date()
                             val (html, csv) = assembleMailMessage(applicationContext, selected, imei)
-                            val sent = sendEmail(email, "${if (fakeSend) "[调试bOSMTracker]" else "[bOSMTracker]"}手机标识:$imei(${d})", "$imei<hr />$html", zipFile(csv))
-                            if (!fakeSend && sent) {
-                                setting = Setting(email = email, imei = imei, sentDate = d.time, repeatTime = setting.repeatTime, cron = cron)
-                                saveSetting(applicationContext, setting)
-                                runOnUiThread {
-                                    Toast.makeText(this@MainActivity, "E-Mail已发送", Toast.LENGTH_LONG).show()
-                                }
-                            }
+                            sendMail(email, "", imei, d, html, csv, cron)
                         }
                     }
 
@@ -299,14 +295,7 @@ class MainActivity : AppCompatActivity() {
                         .setPositiveButton("上传") { _, _ ->
                             Executors.newWorkStealingPool().execute {
                                 val (html, csv) = Core.assembleMailMessage(applicationContext, months, imei)
-                                val sent = Core.sendEmail(email, "[bOSMTracker][AUTO]手机标识:$imei(${now})", html, Core.zipFile(csv))
-                                if (sent) {
-                                    setting = Setting(email = email, imei = imei, sentDate = now.time, repeatTime = setting.repeatTime, cron = true)
-                                    Core.saveSetting(applicationContext, setting)
-                                    runOnUiThread {
-                                        Toast.makeText(this@MainActivity, "E-Mail已发送", Toast.LENGTH_LONG).show()
-                                    }
-                                }
+                                sendMail(email, "[AUTO]", imei, now, html, csv, true)
                             }
                         }
                         .setNegativeButton("退出") { _, _ ->
@@ -325,7 +314,44 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(receiver)
     }
 
+    private fun sendMail(email: String, title: String = "", imei: String, now: Date, html: String, csv: File? = null, cron: Boolean = setting.cron) {
+        val result = StringBuilder()
+        try {
+            val sent = Core.sendEmail(email, "[bOSMTracker]${title}手机标识:$imei(${now})", html, Core.zipFile(csv))
+            if (sent) {
+                setting = Setting(email = email, imei = imei, sentDate = now.time, repeatTime = setting.repeatTime, cron = cron)
+                Core.saveSetting(applicationContext, setting)
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "E-Mail已发送", Toast.LENGTH_LONG).show()
+                }
+            }
+            return
+        } catch (e: Exception) {
+            e.printStackTrace()
+            result.append("错误:${e.message}\n调试:${e.stackTraceToString()}")
+        }
+        runOnUiThread {
+            AlertDialog.Builder(this)
+                    .setTitle("错误")
+                    .setMessage(result.toString())
+                    .setPositiveButton("知道了", null)
+                    .create()
+                    .show()
+        }
+    }
+
     companion object {
         var setting = Setting(email = "", sentDate = 0, repeatTime = 28L * 24 * 3600 * 1000, imei = "")
+    }
+
+    override fun uncaughtException(t: Thread, e: Throwable) {
+        runOnUiThread {
+            AlertDialog.Builder(this)
+                    .setTitle("未知错误")
+                    .setMessage("线程:$t\t错误:${e.message}\n调试:${e.stackTraceToString()}")
+                    .setPositiveButton("知道了", null)
+                    .create()
+                    .show()
+        }
     }
 }

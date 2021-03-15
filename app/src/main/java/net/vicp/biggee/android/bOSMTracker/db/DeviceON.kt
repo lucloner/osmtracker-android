@@ -103,29 +103,29 @@ data class DeviceON(@PrimaryKey var timeStamp: Long = System.currentTimeMillis()
     fun toMap(): MutableMap<String, String> {
         val map = mutableMapOf(
 
-                Pair(TrackContentProvider.Schema.COL_TRACK_ID, "$inDoorLocation"),
+                Pair(TrackContentProvider.Schema.COL_TRACK_ID, "${inDoorLocation ?: 0}"),
                 Pair(TrackContentProvider.Schema.COL_LATITUDE, "0.0"),
                 Pair(TrackContentProvider.Schema.COL_LONGITUDE, "0.0"),
                 Pair(TrackContentProvider.Schema.COL_NAME, "室内主动定位"),
                 Pair(TrackContentProvider.Schema.COL_SPEED, "0"),
                 Pair(TrackContentProvider.Schema.COL_ELEVATION, "0"),
                 Pair(TrackContentProvider.Schema.COL_ACCURACY, "0"),
-                Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "$point_timestamp"),
+                Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "${point_timestamp ?: 0}"),
                 Pair(TrackContentProvider.Schema.COL_COMPASS, "0"),
                 Pair(TrackContentProvider.Schema.COL_COMPASS_ACCURACY, "0"),
                 Pair(TrackContentProvider.Schema.COL_ATMOSPHERIC_PRESSURE, "0"),
-                Pair("intentAction", intentAction),
-                Pair("wifiName", wifiName),
-                Pair("gsmCell", gsmCell),
-                Pair("gsmOperate", gsmOperate),
-                Pair("timeStamp", "$timeStamp"),
-                Pair("gsmLocation", gsmLocation),
-                Pair("inDoorLocation", "$inDoorLocation")
+                Pair("intentAction", intentAction ?: ""),
+                Pair("wifiName", wifiName ?: ""),
+                Pair("gsmCell", gsmCell ?: ""),
+                Pair("gsmOperate", gsmOperate ?: ""),
+                Pair("timeStamp", "${timeStamp ?: 0}"),
+                Pair("gsmLocation", gsmLocation ?: ""),
+                Pair("inDoorLocation", "${inDoorLocation ?: 0}")
         )
         val coordinate = gsmLocation.split(":")
         if (coordinate.size > 1) {
-            map[TrackContentProvider.Schema.COL_LATITUDE] = "" + coordinate[0]
-            map[TrackContentProvider.Schema.COL_LONGITUDE] = "" + coordinate[1]
+            map[TrackContentProvider.Schema.COL_LATITUDE] = coordinate[0] ?: "0"
+            map[TrackContentProvider.Schema.COL_LONGITUDE] = coordinate[1] ?: "0"
         }
         return map
     }

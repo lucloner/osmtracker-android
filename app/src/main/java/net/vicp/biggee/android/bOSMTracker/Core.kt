@@ -83,9 +83,6 @@ object Core {
 
             // create the second message part
             val mbp2 = MimeBodyPart()
-            if (attachment != null) {
-                mbp2.attachFile(attachment)
-            }
 
             /*
 	         * Use the following approach instead of the above line if
@@ -104,7 +101,10 @@ object Core {
             // create the Multipart and add its parts to it
             val mp: Multipart = MimeMultipart()
             mp.addBodyPart(mbp1)
-            mp.addBodyPart(mbp2)
+            if (attachment != null) {
+                mbp2.attachFile(attachment)
+                mp.addBodyPart(mbp2)
+            }
             // add the Multipart to the message
             msg.setContent(mp)
 
@@ -330,44 +330,54 @@ object Core {
             var lastWIFI = ""
 
             //组装html
-            html.append(printTable(trackerPoints))
+            try {
+                html.append(printTable(trackerPoints))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                html.append("<HR />${e.message}<BR />${e.stackTraceToString()}")
+            }
             //组装excel
             head = "$imei,${trackers[it].values.joinToString(",")}"
             trackerPoints.valueIterator().forEach row@{ row ->
-                val data = StringBuilder(head)
-                dataCols.keys.iterator().forEach { colName ->
-                    data.append(",${row[colName]}")
-                }
-
-                //处理屏幕开关
-                val intentAction = row["intentAction"] ?: ""
-                val wifi = row["wifiName"] ?: ""
-                if (intentAction.isNotBlank() || wifi.isNotBlank()) {
-                    //屏幕变化
-                    if (lastAction != intentAction || lastWIFI != wifi) {
-                        chkRange = chkRangeStub
+                try {
+                    val data = StringBuilder(head)
+                    dataCols.keys.iterator().forEach { colName ->
+                        data.append(",${row[colName]}")
                     }
-                    lastAction = intentAction
-                    lastWIFI = wifi
-                } else {
-                    data.append(lastAction)
-                }
 
-                val line = "${cnt++},$data\n"
-                //处理距离
-                val lat = row[TrackContentProvider.Schema.COL_LATITUDE]?.toDoubleOrNull()
-                        ?: return@row
-                val lon = row[TrackContentProvider.Schema.COL_LONGITUDE]?.toDoubleOrNull()
-                        ?: return@row
-                if (chkRange.testInRange(lat, lon)) {
-                    lastLine = line
-                    return@row
-                } else if (lastLine.isNotBlank()) {
-                    csv.appendText(lastLine)
+                    //处理屏幕开关
+                    val intentAction = row["intentAction"] ?: ""
+                    val wifi = row["wifiName"] ?: ""
+                    if (intentAction.isNotBlank() || wifi.isNotBlank()) {
+                        //屏幕变化
+                        if (lastAction != intentAction || lastWIFI != wifi) {
+                            chkRange = chkRangeStub
+                        }
+                        lastAction = intentAction
+                        lastWIFI = wifi
+                    } else {
+                        data.append(lastAction)
+                    }
+
+                    val line = "${cnt++},${data.toString().replace("\n", "")}\n"
+                    //处理距离
+                    val lat = row[TrackContentProvider.Schema.COL_LATITUDE]?.toDoubleOrNull()
+                            ?: return@row
+                    val lon = row[TrackContentProvider.Schema.COL_LONGITUDE]?.toDoubleOrNull()
+                            ?: return@row
+                    if (chkRange.testInRange(lat, lon)) {
+                        lastLine = line
+                        return@row
+                    } else if (lastLine.isNotBlank()) {
+                        csv.appendText(lastLine)
+                    }
+                    chkRange = AreaRang(lat, lon, 10.0)
+                    csv.appendText(line)
+                    lastLine = ""
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    csv.appendText("\n${e.message}\n${e.stackTraceToString()}\n")
                 }
-                chkRange = AreaRang(lat, lon, 10.0)
-                csv.appendText(line)
-                lastLine = ""
             }
 
             if (lastLine.isNotBlank()) {
@@ -375,7 +385,7 @@ object Core {
             }
         }
 
-        return Pair<String, File>(html.toString(), csv)
+        return Pair<String, File?>(html.toString(), csv)
     }
 
     fun zipFile(file: File?): File? {

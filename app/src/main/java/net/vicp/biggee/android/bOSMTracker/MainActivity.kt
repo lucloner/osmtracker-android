@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity(), Thread.UncaughtExceptionHandler {
             android.os.Process.killProcess(android.os.Process.myPid())
         }
 
+        //TODO:这部分需要整理,主要体现在lambda表达式造成执行顺序混乱
         b_sendemail.setOnClickListener {
             if (!EasyPermissions.hasPermissions(this, Manifest.permission.INTERNET)) {
                 EasyPermissions.requestPermissions(this, "尝试联网", 2, Manifest.permission.INTERNET)

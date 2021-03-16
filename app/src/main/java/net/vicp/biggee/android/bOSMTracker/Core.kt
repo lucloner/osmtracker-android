@@ -142,7 +142,8 @@ object Core {
                     row[it] = "" + cursor?.getString(cursor?.getColumnIndex(it) ?: return@forEach)
                 }
 
-                val date = row[TrackContentProvider.Schema.COL_START_DATE]?.toLong() ?: continue
+                val date = row[TrackContentProvider.Schema.COL_START_DATE]?.toLongOrNull()
+                        ?: continue
                 if (dateRange.contains(date)) {
                     row[TrackContentProvider.Schema.COL_START_DATE] = dateFormat.format(date)
                     data.put(id, row)
@@ -185,7 +186,8 @@ object Core {
                         row[readCols[index]] = "" + cursor.getString(index)
                     }
                 }
-                val date = row[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: continue
+                val date = row[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLongOrNull()
+                        ?: continue
                 if (dateRange.contains(date)) {
                     var intentAction = ""
                     var wifi = ""
@@ -221,8 +223,10 @@ object Core {
         DataCenter.getDB(applicationContext).dao().getInDoorDeviceON(trackerId).parallelStream().forEach {
             val map = it.toMap()
             data.put(it.point_timestamp, map)
-            val date = map[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLong() ?: return@forEach
-            map[TrackContentProvider.Schema.COL_TIMESTAMP] = dateFormat.format(date)
+            data.put(it.timeStamp, map)
+            val date = map[TrackContentProvider.Schema.COL_TIMESTAMP]?.toLongOrNull()
+                    ?: return@forEach
+            map[TrackContentProvider.Schema.COL_TIMESTAMP] = dateFormat.format(Date(date))
         }
 
         return data

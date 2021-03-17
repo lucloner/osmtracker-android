@@ -346,7 +346,7 @@ object Core {
                 try {
                     val data = StringBuilder(head)
                     dataCols.keys.iterator().forEach { colName ->
-                        data.append(",${row[colName]}")
+                        data.append(",${row.getOrDefault(colName, "") ?: ""}")
                     }
 
                     //处理屏幕开关

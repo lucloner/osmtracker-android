@@ -343,10 +343,17 @@ object Core {
             //组装excel
             head = "$imei,${trackers[it].values.joinToString(",")}"
             trackerPoints.valueIterator().forEach row@{ row ->
+                @Suppress("USELESS_ELVIS")
+                row ?: return@row
                 try {
                     val data = StringBuilder(head)
                     dataCols.keys.iterator().forEach { colName ->
-                        data.append(",${row.getOrDefault(colName, "") ?: ""}")
+                        var columnName = ""
+                        @Suppress("SENSELESS_COMPARISON")
+                        if (colName != null && row.containsKey(colName)) {
+                            columnName = "" + row[colName]
+                        }
+                        data.append(",${columnName}")
                     }
 
                     //处理屏幕开关

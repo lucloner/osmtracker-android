@@ -13,7 +13,8 @@ configurations {
 android {
     useLibrary 'org.apache.http.legacy'
     compileSdkVersion 30
-    buildToolsVersion = '31.0.0 rc1'
+    //noinspection GradleDependency
+    buildToolsVersion = '30.0.2'
 
     defaultConfig {
         applicationId "net.vicp.biggee.android.osmtracker"
@@ -56,7 +57,7 @@ android {
         println "!!!!====!!!!====Build E-Mail SMTP Setting: $smtpUser:$smtpPass@$smtpServer TO:$defaultEmailTo"
 
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             signingConfig signingConfigs.key
             multiDexEnabled true
@@ -72,7 +73,7 @@ android {
             buildConfigField('String','smtpPass',"\"${smtpPass}\"")
             buildConfigField('String','defaultEmailTo',"\"${defaultEmailTo}\"")
 
-            shrinkResources true
+            shrinkResources false
             proguardFiles getDefaultProguardFile(
                     'proguard-android-optimize.txt'),
                     'proguard-rules.pro'

@@ -6,21 +6,13 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.2'
+        classpath 'com.android.tools.build:gradle:4.1.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-android-extensions:$kotlin_version"
     }
 }
 
 allprojects {
-//    println("11111aaaaa;"+properties["properties"])
-//    properties["properties"].forEach{k,v->
-//        println("=11111aaaaa;"+k+" "+v.toString())
-//    }
-//
-
-//    println "===11111aaaaa"+localProperties['smtpServer']
-
     repositories {
         google()
         jcenter()

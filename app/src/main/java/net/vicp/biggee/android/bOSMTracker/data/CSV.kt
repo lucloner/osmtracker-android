@@ -9,7 +9,6 @@ import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.nio.charset.Charset
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class CSV(imei: String) : File(File.createTempFile("tracker$imei", ".csv").toURI()), Callback {
@@ -23,7 +22,7 @@ class CSV(imei: String) : File(File.createTempFile("tracker$imei", ".csv").toURI
                 .retryOnConnectionFailure(true)
                 .build()
                 .newCall(
-                    Request.Builder().url(BuildConfig.url)
+                    Request.Builder().url(BuildConfig.uploadUrl)
                         .post(toJsonString(it).toRequestBody("application/json; charset=utf-8".toMediaType()))
                         .build()
                 )

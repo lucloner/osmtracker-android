@@ -9,7 +9,6 @@ configurations {
     }
 }
 
-
 android {
     useLibrary 'org.apache.http.legacy'
     compileSdkVersion 30
@@ -54,7 +53,7 @@ android {
         def smtpUser=''+localProperties['smtpUser']
         def smtpPass=''+localProperties['smtpPass']
         def defaultEmailTo=''+localProperties['defaultEmailTo']
-        def url=''+localProperties['url']
+        def uploadUrl=''+localProperties['uploadUrl']
 
         println "\nSTART!!!!====!!!!===="
         localProperties.forEach{ k , v->
@@ -74,6 +73,7 @@ android {
                 signingConfig signingConfigs.release
             }
 
+            buildConfigField('String','uploadUrl',"\"${uploadUrl}\"")
             buildConfigField('String','smtpServer',"\"${smtpServer}\"")
             buildConfigField('String','smtpUser',"\"${smtpUser}\"")
             buildConfigField('String','smtpPass',"\"${smtpPass}\"")
@@ -93,6 +93,7 @@ android {
             multiDexEnabled false
             shrinkResources false
 
+            buildConfigField('String','uploadUrl',"\"${uploadUrl}\"")
             buildConfigField('String','smtpServer',"\"${smtpServer}\"")
             buildConfigField('String','smtpUser',"\"${smtpUser}\"")
             buildConfigField('String','smtpPass',"\"${smtpPass}\"")

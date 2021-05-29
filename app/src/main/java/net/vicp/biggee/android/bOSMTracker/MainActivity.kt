@@ -38,6 +38,7 @@ import kotlin.collections.LinkedHashSet
 
 @Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity(), Thread.UncaughtExceptionHandler {
+    var startTime = System.currentTimeMillis()
 
     lateinit var receiver: DeviceON
 

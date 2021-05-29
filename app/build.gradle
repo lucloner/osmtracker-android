@@ -54,7 +54,13 @@ android {
         def smtpUser=''+localProperties['smtpUser']
         def smtpPass=''+localProperties['smtpPass']
         def defaultEmailTo=''+localProperties['defaultEmailTo']
-        println "!!!!====!!!!====Build E-Mail SMTP Setting: $smtpUser:$smtpPass@$smtpServer TO:$defaultEmailTo"
+        def url=''+localProperties['url']
+
+        println "\nSTART!!!!====!!!!===="
+        localProperties.forEach{ k , v->
+            println "\t$k\n\t->\t\t$v"
+        }
+        println "END!!!!====!!!!===="
 
         release {
             minifyEnabled false
@@ -152,7 +158,6 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.3.2'
     implementation 'org.apache.commons:commons-io:1.3.2'
 
-
     // Required for local unit tests (JUnit 4 framework)
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.8.0'
@@ -192,6 +197,7 @@ dependencies {
 
     implementation 'com.sun.mail:android-mail:1.6.6'
     implementation 'com.sun.mail:android-activation:1.6.6'
+    implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.2'
 }
 
 task copyNorwegianValues(type: Copy) {

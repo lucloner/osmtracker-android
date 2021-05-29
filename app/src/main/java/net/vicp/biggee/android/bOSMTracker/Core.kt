@@ -12,6 +12,7 @@ import android.util.LongSparseArray
 import androidx.core.util.*
 import com.sun.mail.smtp.SMTPTransport
 import net.osmtracker.db.TrackContentProvider
+import net.vicp.biggee.android.bOSMTracker.data.CSV
 import net.vicp.biggee.android.bOSMTracker.db.DataCenter
 import net.vicp.biggee.android.bOSMTracker.db.Setting
 import net.vicp.biggee.android.osmtracker.BuildConfig
@@ -282,7 +283,21 @@ object Core {
         return setting.toTypedArray()
     }
 
-    fun assembleMailMessage(applicationContext: Context, months: Set<Date>, imei: String): Pair<String, File?> {
+    val dataCols = mapOf(
+        Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "记录时间"),
+        Pair(TrackContentProvider.Schema.COL_LONGITUDE, "经度"),
+        Pair(TrackContentProvider.Schema.COL_LATITUDE, "纬度"),
+        Pair("intentAction", "屏幕状态"),
+        Pair("wifiName", "WIFI名称"),
+        Pair("gsmCell", "基站信息")
+    )
+    var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
+
+    fun assembleMailMessage(
+        applicationContext: Context,
+        months: Set<Date>,
+        imei: String
+    ): Pair<String, File?> {
         val sorted = months.sorted()
         val last = sorted.last()
         val startDate = sorted.first().time
@@ -305,20 +320,14 @@ object Core {
         //创建html
         val html = StringBuilder(printTable(trackers))
         //创建excel文件
-        val csv = File.createTempFile("tracker$imei", ".csv")
+        val csv = CSV(imei)
 
         //找不到返回
         if (trackers.isEmpty()) {
             return Pair<String, File?>("找不到符合条件的记录", null)
         }
 
-        val dataCols = mapOf(Pair(TrackContentProvider.Schema.COL_TIMESTAMP, "记录时间"),
-                Pair(TrackContentProvider.Schema.COL_LONGITUDE, "经度"),
-                Pair(TrackContentProvider.Schema.COL_LATITUDE, "纬度"),
-                Pair("intentAction", "屏幕状态"),
-                Pair("wifiName", "WIFI名称"),
-                Pair("gsmCell", "基站信息"))
-        var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
+        //表头写在了前面
         csv.appendText("$head\n", Charset.forName("GB18030"))
 
         //获取任务记录
@@ -443,4 +452,6 @@ object Core {
 
         fun deleteInvalid(applicationContext: Context) = DataCenter.getDB(applicationContext).dao().delDeviceON(0)
     }
+
+
 }

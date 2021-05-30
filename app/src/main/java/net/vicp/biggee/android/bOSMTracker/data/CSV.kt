@@ -1,5 +1,6 @@
 package net.vicp.biggee.android.bOSMTracker.data
 
+import android.widget.Toast
 import net.vicp.biggee.android.bOSMTracker.Core
 import net.vicp.biggee.android.osmtracker.BuildConfig
 import okhttp3.*
@@ -44,10 +45,10 @@ class CSV(imei: String) : File(File.createTempFile("tracker$imei", ".csv").toURI
     }
 
     override fun onFailure(call: Call, e: IOException) {
-        TODO("Not yet implemented")
+        Toast.makeText(Core.applicationContext, "发送失败", Toast.LENGTH_SHORT).show()
     }
 
     override fun onResponse(call: Call, response: Response) {
-        TODO("Not yet implemented")
+        Toast.makeText(Core.applicationContext, "发送成功", Toast.LENGTH_SHORT).show()
     }
 }

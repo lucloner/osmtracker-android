@@ -252,7 +252,6 @@ class MainActivity : AppCompatActivity(), Thread.UncaughtExceptionHandler {
 
             DeviceON.doMonitor(receiver)
         }
-
         //查询本月上传情况
         Executors.newWorkStealingPool().execute {
             val now = Date()

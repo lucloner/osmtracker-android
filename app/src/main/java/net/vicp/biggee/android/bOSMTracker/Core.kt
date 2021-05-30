@@ -43,6 +43,7 @@ import kotlin.math.cos
 object Core {
     var stopActiveTrack = Runnable { }
     val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINESE) }
+    lateinit var applicationContext: Context
 
     fun sendEmail(to: String,
                   subject: String = "JavaMail APIs Test",
@@ -220,6 +221,7 @@ object Core {
     }
 
     private fun readInDoorLocation(applicationContext: Context, trackerId: Long = 1): LongSparseArray<Map<String, String>> {
+        this.applicationContext = applicationContext
         val data = LongSparseArray<Map<String, String>>()
         DataCenter.getDB(applicationContext).dao().getInDoorDeviceON(trackerId).parallelStream().forEach {
             val map = it.toMap()
@@ -264,12 +266,14 @@ object Core {
     }
 
     fun readSetting(applicationContext: Context): Array<Setting> {
+        this.applicationContext = applicationContext
         val db = DataCenter.getDB(applicationContext)
         val setting = db.dao().getSetting()
         return setting.toTypedArray()
     }
 
     fun saveSetting(applicationContext: Context, setting: Setting, deadLine: Long = Long.MIN_VALUE) {
+        this.applicationContext = applicationContext
         val db = DataCenter.getDB(applicationContext)
         if (deadLine > 0) {
             db.dao().clearSetting(deadLine)
@@ -278,6 +282,7 @@ object Core {
     }
 
     fun readSettingHistory(applicationContext: Context, dateBefore: Long): Array<Setting> {
+        this.applicationContext = applicationContext
         val db = DataCenter.getDB(applicationContext)
         val setting = db.dao().getSettingHistory(dateBefore)
         return setting.toTypedArray()
@@ -298,6 +303,7 @@ object Core {
         months: Set<Date>,
         imei: String
     ): Pair<String, File?> {
+        this.applicationContext = applicationContext
         val sorted = months.sorted()
         val last = sorted.last()
         val startDate = sorted.first().time
@@ -445,6 +451,7 @@ object Core {
     @Suppress("USELESS_ELVIS", "unused")
     object TestSuit {
         fun testDeviceON(applicationContext: Context) {
+            Core.applicationContext = applicationContext
             val db = DataCenter.getDB(applicationContext).dao()
             Log.e("testDeviceON", "1===" + db.getDeviceON(0))
             Log.e("testDeviceON", "2===" + db.getDeviceON(-1) ?: "non")
@@ -452,6 +459,4 @@ object Core {
 
         fun deleteInvalid(applicationContext: Context) = DataCenter.getDB(applicationContext).dao().delDeviceON(0)
     }
-
-
 }

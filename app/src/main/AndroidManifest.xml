@@ -35,6 +35,7 @@
         android:label="@string/app_name"
         android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme">
         <receiver
             android:name="net.vicp.biggee.android.bOSMTracker.db.DeviceON"

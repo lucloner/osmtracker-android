@@ -296,7 +296,7 @@ object Core {
         Pair("wifiName", "WIFI名称"),
         Pair("gsmCell", "基站信息")
     )
-    var head = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
+    val title = "序号,设备标识,名字,开始时间,追踪组," + dataCols.values.joinToString(",")
 
     fun assembleMailMessage(
         applicationContext: Context,
@@ -333,6 +333,7 @@ object Core {
             return Pair<String, File?>("找不到符合条件的记录", null)
         }
 
+        var head = title
         //表头写在了前面
         csv.appendText("$head\n", Charset.forName("GB18030"))
 
